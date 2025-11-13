@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Front Desk - Beachside Racetrack</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Front Desk</h1>
+        
+        <div id="login-screen" class="login-screen">
+            <h2>Ligipääsukood</h2>
+            <input type="text" id="access-key" placeholder="Sisesta ligipääsukood" />
+            <button onclick="checkAccessKey()">Sisene</button>
+            <div id="login-error" class="error"></div>
+        </div>
+        
+        <div id="main-content" class="hidden">
+            <section>
+                <h2>Lisa võidusõit</h2>
+                <input type="text" id="race-name" placeholder="Võidusõidu nimi" />
+                <button onclick="createRace()">Lisa võidusõit</button>
+            </section>
+            
+            <section>
+                <h2>Võidusõidud</h2>
+                <div id="races-list"></div>
+            </section>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/socket-client.js"></script>
+    <script src="/js/front-desk.js"></script>
+</body>
+</html>
+

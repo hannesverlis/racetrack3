@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leader Board - Beachside Racetrack</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Leader Board</h1>
+        
+        <div id="leaderboard-content">
+            <div id="no-race" class="message">Ootan võidusõitu...</div>
+            <div id="leaderboard-table" class="hidden"></div>
+        </div>
+        
+        <button onclick="toggleFullscreen()" class="fullscreen-btn">⛶ Täisekraan</button>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/socket-client.js"></script>
+    <script src="/js/leader-board.js"></script>
+</body>
+</html>
+

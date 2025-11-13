@@ -1,0 +1,25 @@
+{
+  "name": "racetrack-node",
+  "version": "1.0.0",
+  "description": "Beachside Racetrack MVP - Node.js server with Socket.IO",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "cross-env DEV_MODE=true node server.js"
+  },
+  "keywords": [
+    "racetrack",
+    "socket.io",
+    "real-time"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  }
+}

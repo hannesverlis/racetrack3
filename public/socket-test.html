@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Test - Beachside Racetrack</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.connected {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .status.disconnected {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .event-log {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .event-item {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #3498db;
+            padding-left: 10px;
+        }
+        .event-item.error {
+            border-left-color: #e74c3c;
+        }
+        .event-item.success {
+            border-left-color: #2ecc71;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔌 Socket.IO Test</h1>
+        
+        <div id="connection-status" class="status disconnected">
+            Ühendus: Katkestatud
+        </div>
+        
+        <div>
+            <button onclick="testConnection()">Testi ühendust</button>
+            <button onclick="clearLog()">Tühjenda logi</button>
+            <button onclick="testSubscribe()">Telli sündmused</button>
+        </div>
+        
+        <h2>Sündmuste logi</h2>
+        <div id="event-log" class="event-log"></div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket = null;
+        let eventCount = 0;
+        
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('event-log');
+            const item = document.createElement('div');
+            item.className = `event-item ${type}`;
+            item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(item);
+            log.scrollTop = log.scrollHeight;
+            eventCount++;
+        }
+        
+        function updateStatus(connected) {
+            const status = document.getElementById('connection-status');
+            if (connected) {
+                status.className = 'status connected';
+                status.textContent = 'Ühendus: Ühendatud';
+            } else {
+                status.className = 'status disconnected';
+                status.textContent = 'Ühendus: Katkestatud';
+            }
+        }
+        
+        function initSocket() {
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            socket = io();
+            
+            socket.on('connect', () => {
+                addLog('✅ Socket.IO ühendus loodud', 'success');
+                updateStatus(true);
+            });
+            
+            socket.on('disconnect', () => {
+                addLog('❌ Socket.IO ühendus katkestatud', 'error');
+                updateStatus(false);
+            });
+            
+            socket.on('connect_error', (error) => {
+                addLog(`❌ Ühenduse viga: ${error.message}`, 'error');
+                updateStatus(false);
+            });
+            
+            // Testi kõik võidusõidu sündmused
+            socket.on('race-update', (data) => {
+                addLog(`📊 race-update: ${JSON.stringify(data)}`, 'success');
+            });
+            
+            socket.on('next-race', (data) => {
+                addLog(`🏁 next-race: ${JSON.stringify(data)}`, 'success');
+            });
+            
+            socket.on('leaderboard', (data) => {
+                addLog(`📈 leaderboard: ${JSON.stringify(data)}`, 'success');
+            });
+            
+            socket.on('flags', (data) => {
+                addLog(`🚩 flags: ${JSON.stringify(data)}`, 'success');
+            });
+            
+            socket.on('countdown', (data) => {
+                addLog(`⏱️ countdown: ${JSON.stringify(data)}`, 'success');
+            });
+            
+            socket.on('laps', (data) => {
+                addLog(`🏎️ laps: ${JSON.stringify(data)}`, 'success');
+            });
+        }
+        
+        function testConnection() {
+            addLog('🔄 Testin ühendust...', 'info');
+            initSocket();
+        }
+        
+        function testSubscribe() {
+            if (!socket || !socket.connected) {
+                addLog('❌ Socket.IO pole ühendatud!', 'error');
+                return;
+            }
+            
+            addLog('📡 Tellin kõik sündmused...', 'info');
+            
+            // Telli countdown
+            socket.emit('subscribe-countdown', 1);
+            addLog('📡 Telli countdown raceId=1', 'info');
+            
+            // Telli leaderboard
+            socket.emit('subscribe-leaderboard', 1);
+            addLog('📡 Telli leaderboard raceId=1', 'info');
+            
+            // Telli flags
+            socket.emit('subscribe-flags', 1);
+            addLog('📡 Telli flags raceId=1', 'info');
+            
+            // Telli next-race
+            socket.emit('subscribe-next-race');
+            addLog('📡 Telli next-race', 'info');
+        }
+        
+        function clearLog() {
+            document.getElementById('event-log').innerHTML = '';
+            eventCount = 0;
+        }
+        
+        // Algseadistus
+        window.addEventListener('load', () => {
+            addLog('🚀 Socket.IO test leht laetud', 'info');
+            initSocket();
+        });
+    </script>
+</body>
+</html>
+

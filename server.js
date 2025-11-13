@@ -1,0 +1,542 @@
+require('dotenv').config();
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+const DEV_MODE = process.env.DEV_MODE === 'true' || process.env.DEV_MODE === '1';
+const DEFAULT_DURATION_SEC = DEV_MODE ? 60 : 600;
+
+// Ligipääsukoodid
+const ACCESS_KEYS = {
+  RECEPTIONIST: process.env.RECEPTIONIST_KEY || '8ded6076',
+  SAFETY_OFFICIAL: process.env.SAFETY_OFFICIAL_KEY || 'a2d393bc',
+  LAP_OBSERVER: process.env.LAP_LINE_OBSERVER_KEY || '662e0f6c'
+};
+
+// Andmemudel (mälus)
+let races = [];
+let laps = [];
+let raceTimers = new Map(); // raceId -> timer interval
+
+let nextRaceId = 1;
+let nextEntryId = 1;
+
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Ligipääsukoodide kontrolli middleware
+function checkAccessKey(requiredKey) {
+  return (req, res, next) => {
+    const accessKey = req.headers['x-access-key'];
+    
+    if (!accessKey || accessKey !== requiredKey) {
+      // Vale võti: oota 500ms enne vastust
+      setTimeout(() => {
+        res.status(401).json({ error: 'Invalid access key' });
+      }, 500);
+      return;
+    }
+    
+    next();
+  };
+}
+
+// API endpoint'id
+
+// POST /api/races - loo võidusõit
+app.post('/api/races', checkAccessKey(ACCESS_KEYS.RECEPTIONIST), (req, res) => {
+  const { name } = req.body;
+  
+  if (!name || name.trim() === '') {
+    return res.status(400).json({ error: 'Race name is required' });
+  }
+  
+  const race = {
+    id: nextRaceId++,
+    name: name.trim(),
+    status: 'PLANNED',
+    mode: 'SAFE',
+    startTime: null,
+    endTime: null,
+    durationSec: DEFAULT_DURATION_SEC,
+    drivers: []
+  };
+  
+  races.push(race);
+  
+  // Saada Socket.IO sündmus
+  io.emit('race-update', race);
+  io.emit('next-race', getNextRace());
+  
+  res.status(201).json(race);
+});
+
+// GET /api/races - võta kõik võidusõidud
+app.get('/api/races', checkAccessKey(ACCESS_KEYS.RECEPTIONIST), (req, res) => {
+  const { status } = req.query;
+  
+  let filteredRaces = races;
+  if (status) {
+    filteredRaces = races.filter(r => r.status === status);
+  }
+  
+  res.json(filteredRaces);
+});
+
+// DELETE /api/races/:raceId - kustuta võidusõit
+app.delete('/api/races/:raceId', checkAccessKey(ACCESS_KEYS.RECEPTIONIST), (req, res) => {
+  const raceId = parseInt(req.params.raceId);
+  const raceIndex = races.findIndex(r => r.id === raceId);
+  
+  if (raceIndex === -1) {
+    return res.status(404).json({ error: 'Race not found' });
+  }
+  
+  const race = races[raceIndex];
+  
+  if (race.status !== 'PLANNED') {
+    return res.status(400).json({ error: 'Can only delete PLANNED races' });
+  }
+  
+  races.splice(raceIndex, 1);
+  
+  // Kustuta ka ringid
+  laps = laps.filter(l => l.raceId !== raceId);
+  
+  // Saada Socket.IO sündmus
+  io.emit('race-update', { id: raceId, deleted: true });
+  io.emit('next-race', getNextRace());
+  
+  res.status(204).send();
+});
+
+// POST /api/races/:raceId/drivers - lisa sõitja
+app.post('/api/races/:raceId/drivers', checkAccessKey(ACCESS_KEYS.RECEPTIONIST), (req, res) => {
+  const raceId = parseInt(req.params.raceId);
+  const { name, carNumber } = req.body;
+  
+  const race = races.find(r => r.id === raceId);
+  if (!race) {
+    return res.status(404).json({ error: 'Race not found' });
+  }
+  
+  if (race.status !== 'PLANNED') {
+    return res.status(400).json({ error: 'Can only add drivers to PLANNED races' });
+  }
+  
+  if (!name || name.trim() === '') {
+    return res.status(400).json({ error: 'Driver name is required' });
+  }
+  
+  if (!carNumber || typeof carNumber !== 'number') {
+    return res.status(400).json({ error: 'Car number is required' });
+  }
+  
+  // Kontrolli unikaalsust
+  const duplicateName = race.drivers.find(d => d.name.toLowerCase() === name.trim().toLowerCase());
+  if (duplicateName) {
+    return res.status(400).json({ error: 'Driver name must be unique' });
+  }
+  
+  const duplicateCarNumber = race.drivers.find(d => d.carNumber === carNumber);
+  if (duplicateCarNumber) {
+    return res.status(400).json({ error: 'Car number must be unique' });
+  }
+  
+  const entry = {
+    id: nextEntryId++,
+    name: name.trim(),
+    carNumber: carNumber
+  };
+  
+  race.drivers.push(entry);
+  
+  // Saada Socket.IO sündmus
+  io.emit('race-update', race);
+  io.emit('next-race', getNextRace());
+  
+  res.status(201).json(entry);
+});
+
+// DELETE /api/races/:raceId/drivers/:entryId - eemalda sõitja
+app.delete('/api/races/:raceId/drivers/:entryId', checkAccessKey(ACCESS_KEYS.RECEPTIONIST), (req, res) => {
+  const raceId = parseInt(req.params.raceId);
+  const entryId = parseInt(req.params.entryId);
+  
+  const race = races.find(r => r.id === raceId);
+  if (!race) {
+    return res.status(404).json({ error: 'Race not found' });
+  }
+  
+  if (race.status !== 'PLANNED') {
+    return res.status(400).json({ error: 'Can only remove drivers from PLANNED races' });
+  }
+  
+  const entryIndex = race.drivers.findIndex(d => d.id === entryId);
+  if (entryIndex === -1) {
+    return res.status(404).json({ error: 'Driver entry not found' });
+  }
+  
+  race.drivers.splice(entryIndex, 1);
+  
+  // Saada Socket.IO sündmus
+  io.emit('race-update', race);
+  io.emit('next-race', getNextRace());
+  
+  res.status(204).send();
+});
+
+// GET /api/public/next-race - järgmise võidusõidu info
+app.get('/api/public/next-race', (req, res) => {
+  const nextRace = getNextRace();
+  res.json(nextRace);
+});
+
+// GET /api/public/running-races - käimasolevate võidusõitude info (avalik)
+app.get('/api/public/running-races', (req, res) => {
+  const runningRaces = races.filter(r => r.status === 'RUNNING');
+  res.json(runningRaces.map(race => ({
+    id: race.id,
+    name: race.name,
+    status: race.status,
+    mode: race.mode,
+    drivers: race.drivers.map(d => ({
+      name: d.name,
+      carNumber: d.carNumber
+    }))
+  })));
+});
+
+// POST /api/control/:raceId/start - alusta võidusõitu
+app.post('/api/control/:raceId/start', checkAccessKey(ACCESS_KEYS.SAFETY_OFFICIAL), (req, res) => {
+  const raceId = parseInt(req.params.raceId);
+  const race = races.find(r => r.id === raceId);
+  
+  if (!race) {
+    return res.status(404).json({ error: 'Race not found' });
+  }
+  
+  if (race.status !== 'PLANNED') {
+    return res.status(400).json({ error: 'Race can only be started from PLANNED status' });
+  }
+  
+  if (race.drivers.length === 0) {
+    return res.status(400).json({ error: 'Race must have at least one driver' });
+  }
+  
+  race.status = 'RUNNING';
+  race.mode = 'SAFE';
+  race.startTime = new Date();
+  race.endTime = null;
+  
+  // Käivita ajastaja
+  startRaceTimer(raceId);
+  
+  // Saada Socket.IO sündmused
+  io.emit('race-update', race);
+  io.emit('flags', { raceId, mode: race.mode });
+  io.emit('next-race', getNextRace());
+  
+  res.status(204).send();
+});
+
+// POST /api/control/:raceId/finish - lõpeta võidusõit
+app.post('/api/control/:raceId/finish', checkAccessKey(ACCESS_KEYS.SAFETY_OFFICIAL), (req, res) => {
+  const raceId = parseInt(req.params.raceId);
+  const race = races.find(r => r.id === raceId);
+  
+  if (!race) {
+    return res.status(404).json({ error: 'Race not found' });
+  }
+  
+  if (race.status !== 'RUNNING') {
+    return res.status(400).json({ error: 'Race can only be finished from RUNNING status' });
+  }
+  
+  race.status = 'FINISHED';
+  race.mode = 'DANGER';
+  race.endTime = new Date();
+  
+  // Peata ajastaja
+  stopRaceTimer(raceId);
+  
+  // Saada Socket.IO sündmused
+  io.emit('race-update', race);
+  io.emit('flags', { raceId, mode: race.mode });
+  io.emit('countdown', { raceId, remainingSeconds: 0, isRunning: false });
+  
+  res.status(204).send();
+});
+
+// POST /api/control/:raceId/mode - sea režiim
+app.post('/api/control/:raceId/mode', checkAccessKey(ACCESS_KEYS.SAFETY_OFFICIAL), (req, res) => {
+  const raceId = parseInt(req.params.raceId);
+  const { mode } = req.body;
+  
+  const race = races.find(r => r.id === raceId);
+  if (!race) {
+    return res.status(404).json({ error: 'Race not found' });
+  }
+  
+  if (race.status !== 'RUNNING') {
+    return res.status(400).json({ error: 'Can only change mode for RUNNING races' });
+  }
+  
+  const validModes = ['SAFE', 'CAUTION', 'DANGER', 'FINISHING'];
+  if (!validModes.includes(mode)) {
+    return res.status(400).json({ error: `Invalid mode. Must be one of: ${validModes.join(', ')}` });
+  }
+  
+  race.mode = mode;
+  
+  // Saada Socket.IO sündmus
+  io.emit('race-update', race);
+  io.emit('flags', { raceId, mode: race.mode });
+  
+  res.status(204).send();
+});
+
+// POST /api/laps - registreeri ring
+app.post('/api/laps', checkAccessKey(ACCESS_KEYS.LAP_OBSERVER), (req, res) => {
+  const { raceId, carNumber } = req.body;
+  
+  const race = races.find(r => r.id === raceId);
+  if (!race) {
+    return res.status(404).json({ error: 'Race not found' });
+  }
+  
+  if (race.status !== 'RUNNING') {
+    return res.status(400).json({ error: 'Can only register laps for RUNNING races' });
+  }
+  
+  const driver = race.drivers.find(d => d.carNumber === carNumber);
+  if (!driver) {
+    return res.status(404).json({ error: 'Car number not found in race' });
+  }
+  
+  const now = new Date();
+  const raceStartTime = race.startTime ? new Date(race.startTime) : now;
+  const elapsedMs = now - raceStartTime;
+  
+  // Leia eelmine ring
+  const previousLaps = laps.filter(l => l.raceId === raceId && l.carNumber === carNumber);
+  const lapNumber = previousLaps.length + 1;
+  
+  // Arvuta ringi aeg (eelmise ringi ajast praeguseni)
+  let lapMs = elapsedMs;
+  if (previousLaps.length > 0) {
+    const lastLap = previousLaps[previousLaps.length - 1];
+    const lastLapTime = new Date(lastLap.timestamp);
+    lapMs = now - lastLapTime;
+  }
+  
+  const lap = {
+    raceId,
+    carNumber,
+    lapNumber,
+    lapMs,
+    timestamp: now
+  };
+  
+  laps.push(lap);
+  
+  // Saada Socket.IO sündmused
+  io.emit('leaderboard', getLeaderboard(raceId));
+  io.emit('laps', { raceId, lap });
+  
+  res.status(202).json(lap);
+});
+
+// Abifunktsioonid
+
+function getNextRace() {
+  const plannedRaces = races.filter(r => r.status === 'PLANNED');
+  if (plannedRaces.length === 0) {
+    return { id: null, name: null, drivers: [], message: 'No upcoming races' };
+  }
+  
+  // Võta esimene PLANNED võidusõit (väikseima ID-ga)
+  const nextRace = plannedRaces.sort((a, b) => a.id - b.id)[0];
+  
+  return {
+    id: nextRace.id,
+    name: nextRace.name,
+    drivers: nextRace.drivers.map(d => ({
+      name: d.name,
+      carNumber: d.carNumber
+    }))
+  };
+}
+
+function getLeaderboard(raceId) {
+  const race = races.find(r => r.id === raceId);
+  if (!race || race.status !== 'RUNNING') {
+    return { raceId, entries: [] };
+  }
+  
+  const now = new Date();
+  const raceStartTime = race.startTime ? new Date(race.startTime) : now;
+  const elapsedMs = now - raceStartTime;
+  const remainingMs = (race.durationSec * 1000) - elapsedMs;
+  const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+  
+  const entries = race.drivers.map(driver => {
+    const driverLaps = laps.filter(l => l.raceId === raceId && l.carNumber === driver.carNumber);
+    const currentLap = driverLaps.length + 1;
+    
+    // Leia kiireim ring
+    let fastestLap = null;
+    if (driverLaps.length > 0) {
+      fastestLap = Math.min(...driverLaps.map(l => l.lapMs));
+    }
+    
+    return {
+      carNumber: driver.carNumber,
+      driverName: driver.name,
+      currentLap: currentLap,
+      fastestLap: fastestLap,
+      remainingTime: remainingSeconds
+    };
+  });
+  
+  // Sorteeri: kõige rohkem ringe, siis kiireim ring
+  entries.sort((a, b) => {
+    if (a.currentLap !== b.currentLap) {
+      return b.currentLap - a.currentLap;
+    }
+    if (a.fastestLap === null && b.fastestLap === null) return 0;
+    if (a.fastestLap === null) return 1;
+    if (b.fastestLap === null) return -1;
+    return a.fastestLap - b.fastestLap;
+  });
+  
+  return { raceId, entries, mode: race.mode };
+}
+
+function startRaceTimer(raceId) {
+  const race = races.find(r => r.id === raceId);
+  if (!race) return;
+  
+  // Peata eelmine ajastaja, kui see on olemas
+  stopRaceTimer(raceId);
+  
+  const startTime = race.startTime ? new Date(race.startTime) : new Date();
+  const durationMs = race.durationSec * 1000;
+  
+  const timer = setInterval(() => {
+    const now = new Date();
+    const elapsedMs = now - startTime;
+    const remainingMs = durationMs - elapsedMs;
+    const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+    
+    if (remainingSeconds === 0) {
+      // Aeg sai otsa - lõpeta võidusõit automaatselt
+      race.status = 'FINISHED';
+      race.mode = 'DANGER';
+      race.endTime = now;
+      stopRaceTimer(raceId);
+      
+      io.emit('race-update', race);
+      io.emit('flags', { raceId, mode: race.mode });
+      io.emit('countdown', { raceId, remainingSeconds: 0, isRunning: false });
+    } else {
+      // Saada ajastaja uuendus
+      io.emit('countdown', { raceId, remainingSeconds, isRunning: true });
+    }
+  }, 1000);
+  
+  raceTimers.set(raceId, timer);
+  
+  // Saada esimene ajastaja uuendus
+  io.emit('countdown', { raceId, remainingSeconds: race.durationSec, isRunning: true });
+}
+
+function stopRaceTimer(raceId) {
+  const timer = raceTimers.get(raceId);
+  if (timer) {
+    clearInterval(timer);
+    raceTimers.delete(raceId);
+  }
+}
+
+// Socket.IO ühendused
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+  
+  // Tellimused
+  socket.on('subscribe-leaderboard', (raceId) => {
+    console.log('subscribe-leaderboard called with raceId:', raceId);
+    const leaderboard = getLeaderboard(raceId);
+    console.log('Leaderboard data:', leaderboard);
+    socket.emit('leaderboard', leaderboard);
+  });
+  
+  socket.on('subscribe-flags', (raceId) => {
+    const race = races.find(r => r.id === raceId);
+    if (race) {
+      socket.emit('flags', { raceId, mode: race.mode });
+    }
+  });
+  
+  socket.on('subscribe-countdown', (raceId) => {
+    const race = races.find(r => r.id === raceId);
+    if (race && race.status === 'RUNNING') {
+      const startTime = race.startTime ? new Date(race.startTime) : new Date();
+      const now = new Date();
+      const elapsedMs = now - startTime;
+      const remainingMs = (race.durationSec * 1000) - elapsedMs;
+      const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+      socket.emit('countdown', { raceId, remainingSeconds, isRunning: true });
+    }
+  });
+  
+  socket.on('subscribe-next-race', () => {
+    socket.emit('next-race', getNextRace());
+  });
+  
+  // Test sõnumite kuulamine
+  socket.on('test-message', (data) => {
+    console.log('Test message received from client:', data);
+    // Vasta kohe tagasi
+    socket.emit('test-response', {
+      received: data,
+      serverTime: new Date().toISOString(),
+      message: 'Server sai test sõnumi ja vastab tagasi'
+    });
+  });
+  
+  // Saada test sõnum kliendile iga 10 sekundi tagant
+  const testInterval = setInterval(() => {
+    if (socket.connected) {
+      socket.emit('test-ping', {
+        message: 'Serveri test sõnum',
+        timestamp: new Date().toISOString(),
+        serverTime: Date.now()
+      });
+    }
+  }, 10000);
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+    clearInterval(testInterval);
+  });
+});
+
+// Serveri käivitamine
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`Dev mode: ${DEV_MODE ? 'ON (1 minute)' : 'OFF (10 minutes)'}`);
+});
+

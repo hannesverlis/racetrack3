@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Countdown - Beachside Racetrack</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="countdown-page">
+    <div class="countdown-container">
+        <div id="countdown-display" class="countdown-display">
+            <div class="countdown-label">Järelejäänud aeg</div>
+            <div id="countdown-time" class="countdown-time">00:00</div>
+        </div>
+        <button onclick="toggleFullscreen()" class="fullscreen-btn">⛶ Täisekraan</button>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/socket-client.js"></script>
+    <script src="/js/race-countdown.js"></script>
+</body>
+</html>
+

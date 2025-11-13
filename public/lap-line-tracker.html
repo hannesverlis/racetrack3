@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lap-line Tracker - Beachside Racetrack</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Lap-line Tracker</h1>
+        
+        <div id="login-screen" class="login-screen">
+            <h2>Ligipääsukood</h2>
+            <input type="text" id="access-key" placeholder="Sisesta ligipääsukood" />
+            <button onclick="checkAccessKey()">Sisene</button>
+            <div id="login-error" class="error"></div>
+        </div>
+        
+        <div id="main-content" class="hidden">
+            <section>
+                <h2>Vali võidusõit</h2>
+                <select id="race-select" onchange="loadRaceDrivers()">
+                    <option value="">-- Vali võidusõit --</option>
+                </select>
+            </section>
+            
+            <section id="lap-buttons-section" class="hidden">
+                <h2>Registreeri ring</h2>
+                <div id="lap-buttons" class="lap-buttons"></div>
+            </section>
+            
+            <section id="lap-stats-section" class="hidden">
+                <h2>Ringide statistika</h2>
+                <div id="lap-stats"></div>
+            </section>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/socket-client.js"></script>
+    <script src="/js/lap-line-tracker.js"></script>
+</body>
+</html>
+
