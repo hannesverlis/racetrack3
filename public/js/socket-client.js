@@ -1,4 +1,4 @@
-// Socket.IO klient
+// Socket.IO client
 let socket = null;
 let accessKey = null;
 
@@ -22,14 +22,14 @@ function initSocket() {
     });
 }
 
-// API päringud ligipääsukoodiga
+// API requests with access key
 async function apiRequest(url, options = {}) {
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers
     };
     
-    // Lisa ligipääsukood ainult kui URL ei ole avalik endpoint
+    // Add access key only if URL is not a public endpoint
     const isPublicEndpoint = url.startsWith('/api/public/');
     if (accessKey && !isPublicEndpoint) {
         headers['x-access-key'] = accessKey;
@@ -46,7 +46,7 @@ async function apiRequest(url, options = {}) {
             const errorData = await response.json();
             errorMessage = errorData.error || errorMessage;
         } catch (e) {
-            // Kui response pole JSON, kasuta status teksti
+            // If response is not JSON, use status text
             errorMessage = response.statusText || errorMessage;
         }
         throw new Error(errorMessage);
@@ -59,7 +59,7 @@ async function apiRequest(url, options = {}) {
     return await response.json();
 }
 
-// Täisekraani režiim
+// Fullscreen mode
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
@@ -70,8 +70,7 @@ function toggleFullscreen() {
     }
 }
 
-// Algseadistus
+// Initialization
 if (typeof window !== 'undefined') {
     initSocket();
 }
-

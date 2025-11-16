@@ -3,18 +3,18 @@ let currentRaceId = null;
 function updateFlags(mode) {
     const flagsDisplay = document.getElementById('flags-display');
     
-    // Eemalda kõik režiimi klassid
+    // Remove all mode classes
     flagsDisplay.className = 'flags-container';
     flagsDisplay.classList.add('flag');
     
-    // Lisa õige režiimi klass
+    // Add correct mode class
     switch (mode) {
         case 'SAFE':
             flagsDisplay.classList.add('safe');
             flagsDisplay.innerHTML = `
                 <div class="flag-content">
                     <h1>SAFE</h1>
-                    <p>Turvaline</p>
+                    <p>Safe</p>
                 </div>
             `;
             break;
@@ -23,7 +23,7 @@ function updateFlags(mode) {
             flagsDisplay.innerHTML = `
                 <div class="flag-content">
                     <h1>CAUTION</h1>
-                    <p>Ettevaatust</p>
+                    <p>Caution</p>
                 </div>
             `;
             break;
@@ -32,7 +32,7 @@ function updateFlags(mode) {
             flagsDisplay.innerHTML = `
                 <div class="flag-content">
                     <h1>DANGER</h1>
-                    <p>Ohtlik</p>
+                    <p>Danger</p>
                 </div>
             `;
             break;
@@ -41,7 +41,7 @@ function updateFlags(mode) {
             flagsDisplay.innerHTML = `
                 <div class="flag-content">
                     <h1>FINISHING</h1>
-                    <p>Lõpetamine</p>
+                    <p>Finishing</p>
                 </div>
             `;
             break;
@@ -50,13 +50,13 @@ function updateFlags(mode) {
             flagsDisplay.innerHTML = `
                 <div class="flag-content">
                     <h1>SAFE</h1>
-                    <p>Turvaline</p>
+                    <p>Safe</p>
                 </div>
             `;
     }
 }
 
-// Socket.IO kuulamine
+// Socket.IO listening
 socket.on('flags', (data) => {
     currentRaceId = data.raceId;
     updateFlags(data.mode);
@@ -68,15 +68,14 @@ socket.on('race-update', (race) => {
         updateFlags(race.mode);
         socket.emit('subscribe-flags', race.id);
     } else if (race.status === 'FINISHED' && race.id === currentRaceId) {
-        // Võidusõit lõppes - näita DANGER lippu
+        // Race finished - show DANGER flag
         updateFlags('DANGER');
     }
 });
 
-// Tellime lippude uuendusi
+// Subscribe to flag updates
 socket.on('race-update', (race) => {
     if (race.status === 'RUNNING') {
         socket.emit('subscribe-flags', race.id);
     }
 });
-

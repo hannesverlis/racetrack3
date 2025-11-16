@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="et">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,33 +11,34 @@
         <h1>Race Control</h1>
         
         <div id="login-screen" class="login-screen">
-            <h2>Ligipääsukood</h2>
-            <input type="text" id="access-key" placeholder="Sisesta ligipääsukood" />
-            <button onclick="checkAccessKey()">Sisene</button>
+            <h2>Access Code</h2>
+            <input type="text" id="access-key" placeholder="Enter access code" />
+            <button onclick="checkAccessKey()">Enter</button>
             <div id="login-error" class="error"></div>
         </div>
         
         <div id="main-content" class="hidden">
             <section id="next-race-section">
-                <h2>Järgmine võidusõit</h2>
+                <h2>Next Race</h2>
                 <div id="next-race-info"></div>
-                <button onclick="startRace()" id="start-race-btn" class="hidden">Alusta võidusõitu</button>
+                <button onclick="startRace()" id="start-race-btn" class="hidden">Start Race</button>
             </section>
             
             <section id="current-race-section" class="hidden">
-                <h2>Praegune võidusõit</h2>
+                <h2>Current Race</h2>
                 <div id="current-race-info"></div>
                 <div id="countdown-display"></div>
                 
                 <div class="mode-controls">
-                    <h3>Režiim</h3>
-                    <button onclick="setMode('SAFE')" class="mode-btn safe">🟢 Turvaline</button>
-                    <button onclick="setMode('CAUTION')" class="mode-btn caution">🟡 Oht</button>
-                    <button onclick="setMode('DANGER')" class="mode-btn danger">🔴 Ohulik</button>
-                    <button onclick="setMode('FINISHING')" class="mode-btn finishing">🏁 Lõpeta</button>
+                    <h3>Mode</h3>
+                    <button onclick="setMode('SAFE')" class="mode-btn safe">🟢 Safe</button>
+                    <button onclick="setMode('CAUTION')" class="mode-btn caution">🟡 Hazard</button>
+                    <button onclick="setMode('DANGER')" class="mode-btn danger">🔴 Stop driving</button>
                 </div>
                 
-                <button onclick="finishRace()" class="finish-btn">Lõpeta võidusõit</button>
+                <div id="flag-display" class="flag-display"></div>
+                
+                <button onclick="finishRace()" class="finish-btn">Finish race</button>
             </section>
         </div>
     </div>
@@ -47,4 +48,3 @@
     <script src="/js/race-control.js"></script>
 </body>
 </html>
-

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="et">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,14 +8,17 @@
 </head>
 <body>
     <div class="container">
-        <h1>Järgmine võidusõit</h1>
+        <h1>Next Race</h1>
         
         <div id="next-race-content">
-            <div id="no-race" class="message">Pole ühtegi planeeritud võidusõitu</div>
+            <div id="no-race" class="message">No planned races</div>
             <div id="race-info" class="hidden">
                 <h2 id="race-name"></h2>
-                <h3>Sõitjad</h3>
+                <h3>Drivers</h3>
                 <div id="drivers-list"></div>
+            </div>
+            <div id="paddock-message" class="paddock-message hidden">
+                <h2>Proceed to the paddock</h2>
             </div>
         </div>
     </div>

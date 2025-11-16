@@ -336,6 +336,103 @@ select:focus {
     padding: 15px 40px;
     font-size: 1.2em;
     margin-top: 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.finish-btn:hover {
+    background: #c0392b;
+}
+
+/* Flag display for race control */
+.flag-display {
+    margin: 20px 0;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flag-display .flag-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.flag-display .flag-content span {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.flag-display.flag-safe {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+}
+
+.flag-display.flag-caution {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+.flag-display.flag-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.flag-display.flag-finishing {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+}
+
+/* Flag elements */
+.flag-green,
+.flag-yellow,
+.flag-red {
+    width: 120px;
+    height: 80px;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.flag-green {
+    background: #2ecc71;
+}
+
+.flag-yellow {
+    background: #f39c12;
+}
+
+.flag-red {
+    background: #e74c3c;
+}
+
+/* Checkered flag pattern */
+.flag-checkered {
+    width: 120px;
+    height: 80px;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    background-image: 
+        repeating-linear-gradient(
+            45deg,
+            #000 0px,
+            #000 10px,
+            #fff 10px,
+            #fff 20px
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            #000 0px,
+            #000 10px,
+            #fff 10px,
+            #fff 20px
+        );
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
 }
 
 /* Lap buttons */
@@ -371,6 +468,42 @@ select:focus {
 /* Leaderboard */
 #leaderboard-table {
     overflow-x: auto;
+}
+
+.remaining-time-container {
+    text-align: center;
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.remaining-time-label {
+    font-size: 1.2em;
+    color: white;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.remaining-time-display {
+    font-size: 4em;
+    font-weight: bold;
+    color: #2ecc71;
+    font-family: 'Courier New', monospace;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    transition: color 0.3s ease;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .leaderboard-table {
@@ -528,6 +661,34 @@ select:focus {
 }
 
 /* Message */
+.paddock-message {
+    text-align: center;
+    padding: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin: 20px 0;
+}
+
+.paddock-message h2 {
+    color: white;
+    font-size: 3em;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .message {
     text-align: center;
     padding: 40px;

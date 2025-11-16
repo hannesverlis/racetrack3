@@ -7,7 +7,7 @@ function updateCountdown(remainingSeconds) {
     
     document.getElementById('countdown-time').textContent = display;
     
-    // Muuda värv, kui aeg väheneb
+    // Change color when time decreases
     const countdownTime = document.getElementById('countdown-time');
     if (remainingSeconds <= 60) {
         countdownTime.style.color = '#e74c3c';
@@ -18,43 +18,43 @@ function updateCountdown(remainingSeconds) {
     }
 }
 
-// Socket.IO kuulamine
+// Socket.IO listening
 socket.on('countdown', (data) => {
     if (data.isRunning) {
         currentRaceId = data.raceId;
         updateCountdown(data.remainingSeconds);
     } else {
-        // Võidusõit lõppes
+        // Race finished
         updateCountdown(0);
         setTimeout(() => {
             document.getElementById('countdown-time').textContent = '00:00';
             const label = document.querySelector('.countdown-label');
             if (label) {
-                label.textContent = 'Võidusõit on lõppenud';
+                label.textContent = 'Race finished';
             }
         }, 2000);
     }
 });
 
-// Tellime ajastaja uuendusi
+// Subscribe to timer updates
 socket.on('race-update', (race) => {
     if (race.status === 'RUNNING') {
         currentRaceId = race.id;
         socket.emit('subscribe-countdown', race.id);
     } else if (race.status === 'FINISHED' && race.id === currentRaceId) {
-        // Võidusõit lõppes
+        // Race finished
         currentRaceId = null;
         updateCountdown(0);
     }
 });
 
-// Lehe laadimisel telli käimasolevate võidusõitude countdown'i
+// On page load, subscribe to running races' countdown
 function subscribeToCountdown() {
     fetch('/api/public/running-races')
         .then(response => response.json())
         .then(runningRaces => {
             if (runningRaces.length > 0) {
-                // Telli esimese käimasoleva võidusõidu countdown'i
+                // Subscribe to first running race's countdown
                 const firstRunningRace = runningRaces[0];
                 currentRaceId = firstRunningRace.id;
                 socket.emit('subscribe-countdown', firstRunningRace.id);
@@ -69,8 +69,7 @@ socket.on('connect', () => {
     subscribeToCountdown();
 });
 
-// Kui socket on juba ühendatud, telli kohe
+// If socket is already connected, subscribe immediately
 if (socket && socket.connected) {
     subscribeToCountdown();
 }
-

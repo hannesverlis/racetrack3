@@ -1,7 +1,28 @@
 let currentRaceId = null;
+let remainingTime = null;
 
 function loadLeaderboard() {
-    // Oota Socket.IO sündmust
+    // Wait for Socket.IO event
+}
+
+function updateRemainingTimeDisplay(seconds) {
+    remainingTime = seconds;
+    const timeDisplay = document.getElementById('remaining-time-display');
+    if (timeDisplay) {
+        timeDisplay.textContent = formatTime(seconds);
+        
+        // Change color when time is running out
+        if (seconds <= 10) {
+            timeDisplay.style.color = '#e74c3c';
+            timeDisplay.style.animation = 'pulse 1s infinite';
+        } else if (seconds <= 30) {
+            timeDisplay.style.color = '#f39c12';
+            timeDisplay.style.animation = '';
+        } else {
+            timeDisplay.style.color = '#2ecc71';
+            timeDisplay.style.animation = '';
+        }
+    }
 }
 
 function displayLeaderboard(leaderboard) {
@@ -11,12 +32,29 @@ function displayLeaderboard(leaderboard) {
     if (!leaderboard.entries || leaderboard.entries.length === 0) {
         container.classList.add('hidden');
         noRace.classList.remove('hidden');
-        noRace.textContent = 'Ootan võidusõitu...';
+        noRace.textContent = 'Waiting for race...';
+        // Hide remaining time display
+        const timeDisplay = document.getElementById('remaining-time-display');
+        if (timeDisplay) {
+            timeDisplay.parentElement.classList.add('hidden');
+        }
         return;
     }
     
     noRace.classList.add('hidden');
     container.classList.remove('hidden');
+    
+    // Show remaining time display
+    const timeDisplay = document.getElementById('remaining-time-display');
+    if (timeDisplay) {
+        timeDisplay.parentElement.classList.remove('hidden');
+        // Use remainingTime from leaderboard or saved value
+        if (leaderboard.entries.length > 0 && leaderboard.entries[0].remainingTime !== undefined) {
+            updateRemainingTimeDisplay(leaderboard.entries[0].remainingTime);
+        } else if (remainingTime !== null) {
+            updateRemainingTimeDisplay(remainingTime);
+        }
+    }
     
     const modeColors = {
         'SAFE': '#2ecc71',
@@ -29,13 +67,13 @@ function displayLeaderboard(leaderboard) {
         <table class="leaderboard-table">
             <thead>
                 <tr>
-                    <th>Koht</th>
-                    <th>Sõitja</th>
-                    <th>Auto #</th>
-                    <th>Ringe</th>
-                    <th>Kiireim ring</th>
-                    <th>Järelejäänud aeg</th>
-                    <th>Lipp</th>
+                    <th>Position</th>
+                    <th>Driver</th>
+                    <th>Car #</th>
+                    <th>Laps</th>
+                    <th>Fastest Lap</th>
+                    <th>Remaining Time</th>
+                    <th>Flag</th>
                 </tr>
             </thead>
             <tbody>
@@ -84,7 +122,7 @@ function getFlagEmoji(mode) {
     }
 }
 
-// Socket.IO kuulamine
+// Socket.IO listening
 socket.on('leaderboard', (leaderboard) => {
     console.log('Leaderboard received:', leaderboard);
     if (leaderboard && leaderboard.raceId) {
@@ -93,49 +131,63 @@ socket.on('leaderboard', (leaderboard) => {
     }
 });
 
+socket.on('countdown', (data) => {
+    console.log('Countdown received:', data);
+    if (data.raceId === currentRaceId && data.isRunning) {
+        updateRemainingTimeDisplay(data.remainingSeconds);
+    }
+});
+
 socket.on('race-update', (race) => {
     console.log('Race update received:', race);
     if (race.status === 'RUNNING') {
-        // Kui võidusõit alustati, telli selle leaderboard'i
+        // If race started, subscribe to its leaderboard and countdown
         if (!currentRaceId || currentRaceId === race.id) {
             currentRaceId = race.id;
             console.log('Subscribing to leaderboard for race:', race.id);
             socket.emit('subscribe-leaderboard', race.id);
+            socket.emit('subscribe-countdown', race.id);
         }
     } else if (race.status === 'FINISHED' && race.id === currentRaceId) {
-        // Võidusõit lõppes, näita viimast leaderboard'i veel 5 sekundit
+        // Race finished, show last leaderboard for 5 more seconds
+        updateRemainingTimeDisplay(0);
         setTimeout(() => {
             const container = document.getElementById('leaderboard-table');
             const noRace = document.getElementById('no-race');
+            const timeDisplay = document.getElementById('remaining-time-display');
             if (container) container.classList.add('hidden');
+            if (timeDisplay) timeDisplay.parentElement.classList.add('hidden');
             if (noRace) {
                 noRace.classList.remove('hidden');
-                noRace.textContent = 'Võidusõit on lõppenud';
+                noRace.textContent = 'Race finished';
             }
         }, 5000);
     }
 });
 
-// Tellime leaderboard'i uuendusi
+// Subscribe to leaderboard updates
 function subscribeToLeaderboard() {
     fetch('/api/public/running-races')
         .then(response => response.json())
         .then(runningRaces => {
             console.log('Running races:', runningRaces);
             if (runningRaces.length > 0) {
-                // Telli esimese käimasoleva võidusõidu leaderboard'i
+                // Subscribe to first running race's leaderboard and countdown
                 const firstRunningRace = runningRaces[0];
                 currentRaceId = firstRunningRace.id;
                 console.log('Subscribing to leaderboard for race:', firstRunningRace.id);
                 socket.emit('subscribe-leaderboard', firstRunningRace.id);
+                socket.emit('subscribe-countdown', firstRunningRace.id);
             } else {
-                // Pole käimasolevaid võidusõitu
+                // No running races
                 const container = document.getElementById('leaderboard-table');
                 const noRace = document.getElementById('no-race');
+                const timeDisplay = document.getElementById('remaining-time-display');
                 if (container) container.classList.add('hidden');
+                if (timeDisplay) timeDisplay.parentElement.classList.add('hidden');
                 if (noRace) {
                     noRace.classList.remove('hidden');
-                    noRace.textContent = 'Pole käimasolevaid võidusõitu';
+                    noRace.textContent = 'No running races';
                 }
             }
         })
@@ -146,19 +198,18 @@ function subscribeToLeaderboard() {
 
 socket.on('connect', () => {
     console.log('Socket connected, subscribing to leaderboard');
-    // Lehe laadimisel telli käimasolevate võidusõitude leaderboard'i
+    // On page load, subscribe to running races' leaderboard
     subscribeToLeaderboard();
 });
 
-// Kui socket on juba ühendatud, telli kohe
+// If socket is already connected, subscribe immediately
 setTimeout(() => {
     if (socket && socket.connected) {
         subscribeToLeaderboard();
     } else {
-        // Oota socket ühendust
+        // Wait for socket connection
         socket.on('connect', () => {
             subscribeToLeaderboard();
         });
     }
 }, 100);
-

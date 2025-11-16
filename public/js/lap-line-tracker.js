@@ -12,7 +12,7 @@ function checkAccessKey() {
         document.getElementById('main-content').classList.remove('hidden');
         loadRaces();
     } else {
-        document.getElementById('login-error').textContent = 'Vale ligipääsukood';
+        document.getElementById('login-error').textContent = 'Invalid access code';
         setTimeout(() => {
             document.getElementById('login-error').textContent = '';
         }, 3000);
@@ -21,25 +21,34 @@ function checkAccessKey() {
 
 async function loadRaces() {
     try {
-        // Kasuta avalikku endpoint'i käimasolevate võidusõitude jaoks
-        races = await apiRequest('/api/public/running-races');
+        // Load both PLANNED and RUNNING races
+        races = await apiRequest('/api/public/available-races');
         updateRaceSelect();
     } catch (error) {
         console.error('Error loading races:', error);
-        alert('Viga võidusõitude laadimisel: ' + error.message);
+        alert('Error loading races: ' + error.message);
     }
 }
 
 function updateRaceSelect() {
     const select = document.getElementById('race-select');
     
-    // Kuna races on juba filtreeritud RUNNING võidusõidud, kasuta otse races massiivi
-    select.innerHTML = '<option value="">-- Vali võidusõit --</option>' +
-        races.map(race => `<option value="${race.id}">${race.name}</option>`).join('');
+    // Sort: RUNNING races first, then PLANNED
+    const sortedRaces = [...races].sort((a, b) => {
+        if (a.status === 'RUNNING' && b.status !== 'RUNNING') return -1;
+        if (a.status !== 'RUNNING' && b.status === 'RUNNING') return 1;
+        return a.id - b.id;
+    });
     
-    // Kui pole käimasolevaid võidusõitu, näita teadet
+    select.innerHTML = '<option value="">-- Select Race --</option>' +
+        sortedRaces.map(race => {
+            const statusLabel = race.status === 'RUNNING' ? ' (Running)' : ' (Planned)';
+            return `<option value="${race.id}">${race.name}${statusLabel}</option>`;
+        }).join('');
+    
+    // If no races, show message
     if (races.length === 0) {
-        console.log('Pole käimasolevaid võidusõitu');
+        console.log('No available races');
     }
 }
 
@@ -54,8 +63,33 @@ function loadRaceDrivers() {
     }
     
     const race = races.find(r => r.id === raceId);
-    if (!race || race.status !== 'RUNNING') {
-        alert('Valitud võidusõit ei ole aktiivne');
+    if (!race) {
+        alert('Selected race not found');
+        return;
+    }
+    
+    // If race is still PLANNED, show warning message
+    if (race.status === 'PLANNED') {
+        document.getElementById('lap-buttons-section').classList.add('hidden');
+        document.getElementById('lap-stats-section').classList.remove('hidden');
+        currentRaceId = raceId;
+        
+        const container = document.getElementById('lap-stats');
+        container.innerHTML = `
+            <div style="padding: 20px; background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; text-align: center;">
+                <h3 style="color: #856404; margin-top: 0;">⏳ Race is still planned</h3>
+                <p style="color: #856404; margin-bottom: 0;">
+                    Laps can only be registered once the race has started.<br>
+                    Wait until the race becomes active.
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    // If race is RUNNING, show lap registration option
+    if (race.status !== 'RUNNING') {
+        alert('Selected race is not active');
         return;
     }
     
@@ -64,17 +98,17 @@ function loadRaceDrivers() {
     document.getElementById('lap-buttons-section').classList.remove('hidden');
     document.getElementById('lap-stats-section').classList.remove('hidden');
     
-    // Telli leaderboard'i kohe, et näidata statistikat
+    // Subscribe to leaderboard immediately to show statistics
     socket.emit('subscribe-leaderboard', raceId);
     
-    // Näita algne statistika (tühi või olemasolev)
+    // Show initial statistics (empty or existing)
     const container = document.getElementById('lap-stats');
     container.innerHTML = `
-        <h3>Edetabel</h3>
-        <p>Laen andmeid...</p>
-        <h3 style="margin-top: 30px;">Ringide ajalugu</h3>
+        <h3>Leaderboard</h3>
+        <p>Loading data...</p>
+        <h3 style="margin-top: 30px;">Lap History</h3>
         <div id="lap-history">
-            <p>Pole veel ringe registreeritud</p>
+            <p>No laps registered yet</p>
         </div>
     `;
 }
@@ -83,8 +117,8 @@ function displayLapButtons(drivers) {
     const container = document.getElementById('lap-buttons');
     
     container.innerHTML = drivers.map(driver => `
-        <button class="lap-button" onclick="registerLap(${driver.carNumber})">
-            Auto #${driver.carNumber}<br>
+        <button class="lap-button" data-car-number="${driver.carNumber}" onclick="registerLap(${driver.carNumber})">
+            Car #${driver.carNumber}<br>
             <small>${driver.name}</small>
         </button>
     `).join('');
@@ -92,7 +126,7 @@ function displayLapButtons(drivers) {
 
 async function registerLap(carNumber) {
     if (!currentRaceId) {
-        alert('Vali esmalt võidusõit');
+        alert('Select a race first');
         return;
     }
     
@@ -102,18 +136,16 @@ async function registerLap(carNumber) {
             body: JSON.stringify({ raceId: currentRaceId, carNumber })
         });
         
-        // Nupu visuaalne tagasiside
-        const buttons = document.querySelectorAll('.lap-button');
-        buttons.forEach(btn => {
-            if (btn.textContent.includes(`Auto #${carNumber}`)) {
-                btn.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    btn.style.transform = '';
-                }, 200);
-            }
-        });
+        // Visual feedback for button - use data-attribute for exact match
+        const button = document.querySelector(`.lap-button[data-car-number="${carNumber}"]`);
+        if (button) {
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = '';
+            }, 200);
+        }
     } catch (error) {
-        alert('Viga ringi registreerimisel: ' + error.message);
+        alert('Error registering lap: ' + error.message);
     }
 }
 
@@ -124,20 +156,20 @@ function updateLapStats(leaderboard) {
     
     const container = document.getElementById('lap-stats');
     
-    // Näita nii leaderboard'i kui ka ringide ajalugu
+    // Show both leaderboard and lap history
     let html = '';
     
     if (leaderboard.entries.length > 0) {
         html += `
-            <h3>Edetabel</h3>
+            <h3>Leaderboard</h3>
             <table class="leaderboard-table">
                 <thead>
                     <tr>
-                        <th>Koht</th>
-                        <th>Sõitja</th>
-                        <th>Auto #</th>
-                        <th>Ringe</th>
-                        <th>Kiireim ring</th>
+                        <th>Position</th>
+                        <th>Driver</th>
+                        <th>Car #</th>
+                        <th>Laps</th>
+                        <th>Fastest Lap</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -154,15 +186,15 @@ function updateLapStats(leaderboard) {
             </table>
         `;
     } else {
-        html += '<p>Pole veel ringe registreeritud</p>';
+        html += '<p>No laps registered yet</p>';
     }
     
-    html += '<h3 style="margin-top: 30px;">Ringide ajalugu</h3>';
+    html += '<h3 style="margin-top: 30px;">Lap History</h3>';
     html += '<div id="lap-history"></div>';
     
     container.innerHTML = html;
     
-    // Näita ringide ajalugu
+    // Show lap history
     displayLapHistory();
 }
 
@@ -174,16 +206,16 @@ function displayLapHistory() {
     }
     
     if (!currentRaceId) {
-        historyContainer.innerHTML = '<p>Vali võidusõit</p>';
+        historyContainer.innerHTML = '<p>Select a race</p>';
         return;
     }
     
     if (!lapHistory[currentRaceId] || Object.keys(lapHistory[currentRaceId]).length === 0) {
-        historyContainer.innerHTML = '<p>Pole veel ringe registreeritud</p>';
+        historyContainer.innerHTML = '<p>No laps registered yet</p>';
         return;
     }
     
-    // Kogume kõik ringid ühte massiivi koos ajaga
+    // Collect all laps into one array with time
     const allLaps = [];
     Object.keys(lapHistory[currentRaceId]).forEach(carNumber => {
         lapHistory[currentRaceId][carNumber].forEach((lap) => {
@@ -192,16 +224,16 @@ function displayLapHistory() {
                 lapNumber: lap.lapNumber,
                 lapTime: lap.lapMs,
                 timestamp: lap.timestamp,
-                driverName: lap.driverName || `Auto #${carNumber}`
+                driverName: lap.driverName || `Car #${carNumber}`
             });
         });
     });
     
-    // Sorteeri ajastamise järgi (uusimad esimestena)
+    // Sort by timestamp (newest first)
     allLaps.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     if (allLaps.length === 0) {
-        historyContainer.innerHTML = '<p>Pole veel ringe registreeritud</p>';
+        historyContainer.innerHTML = '<p>No laps registered yet</p>';
         return;
     }
     
@@ -209,18 +241,18 @@ function displayLapHistory() {
         <table class="leaderboard-table">
             <thead>
                 <tr>
-                    <th>Aeg</th>
-                    <th>Sõitja</th>
-                    <th>Auto #</th>
-                    <th>Ring #</th>
-                    <th>Ringi aeg</th>
+                    <th>Time</th>
+                    <th>Driver</th>
+                    <th>Car #</th>
+                    <th>Lap #</th>
+                    <th>Lap Time</th>
                 </tr>
             </thead>
             <tbody>
                 ${allLaps.map(lap => `
                     <tr>
                         <td>${formatTimestamp(lap.timestamp)}</td>
-                        <td>${lap.driverName || 'Tundmatu'}</td>
+                        <td>${lap.driverName || 'Unknown'}</td>
                         <td>#${lap.carNumber}</td>
                         <td>${lap.lapNumber}</td>
                         <td>${formatLapTime(lap.lapTime)}</td>
@@ -233,7 +265,7 @@ function displayLapHistory() {
 
 function formatTimestamp(timestamp) {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('et-EE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 function formatLapTime(ms) {
@@ -242,10 +274,10 @@ function formatLapTime(ms) {
     return `${seconds}.${String(milliseconds).padStart(3, '0')}s`;
 }
 
-// Socket.IO kuulamine
+// Socket.IO listening
 socket.on('race-update', (race) => {
-    // Uuenda ainult käimasolevaid võidusõitu
-    if (race.status === 'RUNNING') {
+    // Update PLANNED and RUNNING races
+    if (race.status === 'PLANNED' || race.status === 'RUNNING') {
         const index = races.findIndex(r => r.id === race.id);
         if (index !== -1) {
             races[index] = race;
@@ -254,12 +286,17 @@ socket.on('race-update', (race) => {
         }
         updateRaceSelect();
         
-        // Kui valitud võidusõit uuendati, uuenda ka sõitjad
-        if (race.id === currentRaceId) {
+        // If selected race was updated and it's RUNNING, update drivers too
+        if (race.id === currentRaceId && race.status === 'RUNNING') {
             displayLapButtons(race.drivers);
         }
+        
+        // If race changed from PLANNED -> RUNNING and it's selected, activate lap registration
+        if (race.id === currentRaceId && race.status === 'RUNNING') {
+            loadRaceDrivers();
+        }
     } else {
-        // Võidusõit lõppes või kustutati
+        // Race finished or was deleted
         races = races.filter(r => r.id !== race.id);
         updateRaceSelect();
         
@@ -278,7 +315,7 @@ socket.on('leaderboard', (leaderboard) => {
 socket.on('laps', (data) => {
     console.log('Laps event received:', data);
     if (data.raceId === currentRaceId && data.lap) {
-        // Lisa ring ajalukku
+        // Add lap to history
         if (!lapHistory[currentRaceId]) {
             lapHistory[currentRaceId] = {};
         }
@@ -286,7 +323,7 @@ socket.on('laps', (data) => {
             lapHistory[currentRaceId][data.lap.carNumber] = [];
         }
         
-        // Leia sõitja nimi
+        // Find driver name
         const race = races.find(r => r.id === currentRaceId);
         const driver = race ? race.drivers.find(d => d.carNumber === data.lap.carNumber) : null;
         const driverName = driver ? driver.name : null;
@@ -301,7 +338,7 @@ socket.on('laps', (data) => {
         console.log('Adding lap to history:', lapData);
         lapHistory[currentRaceId][data.lap.carNumber].push(lapData);
         
-        // Uuenda ringide ajalugu
+        // Update lap history
         displayLapHistory();
     } else {
         console.log('Lap event ignored - raceId mismatch or no lap data', {
@@ -311,4 +348,3 @@ socket.on('laps', (data) => {
         });
     }
 });
-

@@ -10,7 +10,7 @@ function checkAccessKey() {
         document.getElementById('main-content').classList.remove('hidden');
         loadRaces();
     } else {
-        document.getElementById('login-error').textContent = 'Vale ligipääsukood';
+        document.getElementById('login-error').textContent = 'Invalid access code';
         setTimeout(() => {
             document.getElementById('login-error').textContent = '';
         }, 3000);
@@ -23,46 +23,53 @@ async function loadRaces() {
         displayRaces();
     } catch (error) {
         console.error('Error loading races:', error);
-        alert('Viga võidusõitude laadimisel: ' + error.message);
+        alert('Error loading races: ' + error.message);
     }
 }
 
 function displayRaces() {
     const container = document.getElementById('races-list');
     
-    // Näita PLANNED ja FINISHED võidusõitu
+    // Show PLANNED and FINISHED races
     const plannedRaces = races.filter(r => r.status === 'PLANNED');
     const finishedRaces = races.filter(r => r.status === 'FINISHED').sort((a, b) => {
-        // Sorteeri lõppemise aja järgi (uusimad esimestena)
+        // Sort by end time (newest first)
         const aTime = a.endTime ? new Date(a.endTime) : new Date(0);
         const bTime = b.endTime ? new Date(b.endTime) : new Date(0);
         return bTime - aTime;
     });
     
     if (plannedRaces.length === 0 && finishedRaces.length === 0) {
-        container.innerHTML = '<p>Pole ühtegi võidusõitu</p>';
+        container.innerHTML = '<p>No races</p>';
         return;
     }
     
     let html = '';
     
-    // Näita PLANNED võidusõitu
+    // Show PLANNED races
     if (plannedRaces.length > 0) {
-        html += '<h3 style="margin-top: 20px; color: #667eea;">Planeeritud võidusõidud</h3>';
+        html += '<h3 style="margin-top: 20px; color: #667eea;">Planned Races</h3>';
         html += plannedRaces.map(race => {
         const driversHtml = race.drivers.length > 0 
             ? `<div class="drivers-list">
-                <strong>Sõitjad:</strong>
+                <strong>Drivers:</strong>
                 <ul>
                     ${race.drivers.map(driver => `
                         <li>
-                            ${driver.name} - Auto #${driver.carNumber}
+                            ${driver.name} - Car #${driver.carNumber}
                             <button onclick="removeDriver(${race.id}, ${driver.id})" class="remove-driver-btn">🗑️</button>
                         </li>
                     `).join('')}
                 </ul>
             </div>`
-            : '<p class="no-drivers">Pole veel sõitjaid</p>';
+            : '<p class="no-drivers">No drivers yet</p>';
+        
+        const driversCount = race.drivers ? race.drivers.length : 0;
+        const maxDrivers = 8;
+        const driversInfo = `<p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+            Drivers: <strong>${driversCount}/${maxDrivers}</strong>
+            ${driversCount >= maxDrivers ? '<span style="color: #e74c3c;">(full)</span>' : ''}
+        </p>`;
         
         return `
         <div class="race-item" data-race-id="${race.id}">
@@ -70,42 +77,45 @@ function displayRaces() {
                 <div>
                     <h3>${race.name}</h3>
                     <span class="race-status ${race.status.toLowerCase()}">${race.status}</span>
+                    ${driversInfo}
                 </div>
                 <div>
-                    <button onclick="deleteRace(${race.id})">Kustuta võidusõit</button>
+                    <button onclick="deleteRace(${race.id})">Delete Race</button>
                 </div>
             </div>
             <div class="race-drivers-section">
                 ${driversHtml}
+                ${driversCount < maxDrivers ? `
                 <div class="add-driver-form">
-                    <input type="text" id="driver-name-${race.id}" placeholder="Sõitja nimi" />
-                    <input type="number" id="car-number-${race.id}" placeholder="Auto number" min="1" />
-                    <button onclick="addDriverToRace(${race.id})">Lisa sõitja</button>
+                    <input type="text" id="driver-name-${race.id}" placeholder="Driver name" />
+                    <input type="number" id="car-number-${race.id}" placeholder="Car number" min="1" />
+                    <button onclick="addDriverToRace(${race.id})">Add Driver</button>
                 </div>
+                ` : '<p style="color: #e74c3c; margin-top: 15px; font-weight: bold;">⚠️ Maximum number of drivers (8) reached</p>'}
             </div>
         </div>
     `;
         }).join('');
     }
     
-    // Näita FINISHED võidusõitu
+    // Show FINISHED races
     if (finishedRaces.length > 0) {
-        html += '<h3 style="margin-top: 30px; color: #95a5a6;">Lõppenud võidusõidud</h3>';
+        html += '<h3 style="margin-top: 30px; color: #95a5a6;">Finished Races</h3>';
         html += finishedRaces.map(race => {
             const driversHtml = race.drivers && race.drivers.length > 0 
                 ? `<div class="drivers-list">
-                    <strong>Sõitjad:</strong>
+                    <strong>Drivers:</strong>
                     <ul>
                         ${race.drivers.map(driver => `
                             <li>
-                                ${driver.name} - Auto #${driver.carNumber}
+                                ${driver.name} - Car #${driver.carNumber}
                             </li>
                         `).join('')}
                     </ul>
                 </div>`
-                : '<p class="no-drivers">Pole sõitjaid</p>';
+                : '<p class="no-drivers">No drivers</p>';
             
-            const endTime = race.endTime ? new Date(race.endTime).toLocaleString('et-EE') : 'Tundmatu';
+            const endTime = race.endTime ? new Date(race.endTime).toLocaleString('en-US') : 'Unknown';
             
             return `
             <div class="race-item finished-race" data-race-id="${race.id}">
@@ -113,7 +123,7 @@ function displayRaces() {
                     <div>
                         <h3>${race.name}</h3>
                         <span class="race-status ${race.status.toLowerCase()}">${race.status}</span>
-                        <p style="margin-top: 5px; color: #666; font-size: 0.9em;">Lõppes: ${endTime}</p>
+                        <p style="margin-top: 5px; color: #666; font-size: 0.9em;">Finished: ${endTime}</p>
                     </div>
                 </div>
                 <div class="race-drivers-section">
@@ -131,7 +141,7 @@ async function createRace() {
     const name = document.getElementById('race-name').value.trim();
     
     if (!name) {
-        alert('Sisesta võidusõidu nimi');
+        alert('Enter race name');
         return;
     }
     
@@ -144,12 +154,12 @@ async function createRace() {
         document.getElementById('race-name').value = '';
         await loadRaces();
     } catch (error) {
-        alert('Viga võidusõidu loomisel: ' + error.message);
+        alert('Error creating race: ' + error.message);
     }
 }
 
 async function deleteRace(raceId) {
-    if (!confirm('Kas oled kindel, et soovid selle võidusõidu kustutada?')) {
+    if (!confirm('Are you sure you want to delete this race?')) {
         return;
     }
     
@@ -160,7 +170,7 @@ async function deleteRace(raceId) {
         
         await loadRaces();
     } catch (error) {
-        alert('Viga võidusõidu kustutamisel: ' + error.message);
+        alert('Error deleting race: ' + error.message);
     }
 }
 
@@ -168,38 +178,47 @@ async function addDriverToRace(raceId) {
     const name = document.getElementById(`driver-name-${raceId}`).value.trim();
     const carNumber = parseInt(document.getElementById(`car-number-${raceId}`).value);
     
+    // Check maximum number of drivers locally
+    const race = races.find(r => r.id === raceId);
+    const MAX_DRIVERS = 8;
+    
+    if (race && race.drivers && race.drivers.length >= MAX_DRIVERS) {
+        alert(`Maximum of ${MAX_DRIVERS} drivers can be registered per race`);
+        return;
+    }
+    
     if (!name) {
-        alert('Sisesta sõitja nimi');
+        alert('Enter driver name');
         return;
     }
     
     if (!carNumber || carNumber < 1) {
-        alert('Sisesta kehtiv auto number');
+        alert('Enter valid car number');
         return;
     }
     
     try {
-        // Lisa sõitja
+        // Add driver
         await apiRequest(`/api/races/${raceId}/drivers`, {
             method: 'POST',
             body: JSON.stringify({ name, carNumber })
         });
         
-        // Tühjenda väljad
+        // Clear fields
         document.getElementById(`driver-name-${raceId}`).value = '';
         document.getElementById(`car-number-${raceId}`).value = '';
         
-        // Värskenda võidusõitude nimekiri serverist, et saada värskeid andmeid
+        // Refresh race list from server to get fresh data
         await loadRaces();
     } catch (error) {
-        alert('Viga sõitja lisamisel: ' + error.message);
+        alert('Error adding driver: ' + error.message);
     }
 }
 
-// Funktsioon on eemaldatud, sest sõitjad näidatakse nüüd otse displayRaces() funktsioonis
+// Function removed, drivers are now displayed directly in displayRaces() function
 
 async function removeDriver(raceId, entryId) {
-    if (!confirm('Kas oled kindel, et soovid selle sõitja eemaldada?')) {
+    if (!confirm('Are you sure you want to remove this driver?')) {
         return;
     }
     
@@ -208,42 +227,41 @@ async function removeDriver(raceId, entryId) {
             method: 'DELETE'
         });
         
-        // Värskenda võidusõitude nimekiri
+        // Refresh race list
         await loadRaces();
     } catch (error) {
-        alert('Viga sõitja eemaldamisel: ' + error.message);
+        alert('Error removing driver: ' + error.message);
     }
 }
 
-// Socket.IO kuulamine
+// Socket.IO listening
 socket.on('race-update', (race) => {
     const index = races.findIndex(r => r.id === race.id);
     
     if (race.deleted) {
-        // Võidusõit kustutati
+        // Race was deleted
         races = races.filter(r => r.id !== race.id);
         displayRaces();
         return;
     }
     
     if (index !== -1) {
-        // Võidusõit uuendati
+        // Race was updated
         races[index] = race;
         
-        // Kui võidusõit muutus RUNNING-uks, eemalda see front-desk lehelt
+        // If race changed to RUNNING, remove it from front-desk page
         if (race.status !== 'PLANNED') {
             races = races.filter(r => r.id !== race.id || r.status === 'PLANNED');
         }
         
         displayRaces();
     } else if (race.status === 'PLANNED') {
-        // Uus PLANNED võidusõit lisati
+        // New PLANNED race was added
         races.push(race);
         displayRaces();
     }
 });
 
 socket.on('next-race', () => {
-    // Võidusõit uuendati
+    // Race was updated
 });
-

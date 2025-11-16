@@ -11,7 +11,7 @@ function checkAccessKey() {
         document.getElementById('main-content').classList.remove('hidden');
         loadNextRace();
     } else {
-        document.getElementById('login-error').textContent = 'Vale ligipääsukood';
+        document.getElementById('login-error').textContent = 'Invalid access code';
         setTimeout(() => {
             document.getElementById('login-error').textContent = '';
         }, 3000);
@@ -31,25 +31,25 @@ function displayNextRace(nextRace) {
     const container = document.getElementById('next-race-info');
     
     if (!nextRace.id) {
-        container.innerHTML = '<p>' + (nextRace.message || 'Pole ühtegi planeeritud võidusõitu') + '</p>';
+        container.innerHTML = '<p>' + (nextRace.message || 'No planned races') + '</p>';
         document.getElementById('start-race-btn').classList.add('hidden');
         currentRaceId = null;
         return;
     }
     
-    // Kontrolli, kas see võidusõit on endiselt PLANNED
-    // Kui mitte, siis ei näita seda
+    // Check if this race is still PLANNED
+    // If not, don't show it
     container.innerHTML = `
         <h3>${nextRace.name}</h3>
-        <p><strong>Sõitjad:</strong> ${nextRace.drivers.length}</p>
+        <p><strong>Drivers:</strong> ${nextRace.drivers.length}</p>
         ${nextRace.drivers.length > 0 ? `
         <ul>
-            ${nextRace.drivers.map(d => `<li>${d.name} - Auto #${d.carNumber}</li>`).join('')}
+            ${nextRace.drivers.map(d => `<li>${d.name} - Car #${d.carNumber}</li>`).join('')}
         </ul>
-        ` : '<p>Pole ühtegi sõitjat</p>'}
+        ` : '<p>No drivers</p>'}
     `;
     
-    // Näita nuppu ainult siis, kui on sõitjaid
+    // Show button only if there are drivers
     if (nextRace.drivers.length > 0) {
         document.getElementById('start-race-btn').classList.remove('hidden');
     } else {
@@ -61,29 +61,29 @@ function displayNextRace(nextRace) {
 
 async function startRace() {
     if (!currentRaceId) {
-        alert('Pole võidusõitu, mida alustada');
+        alert('No race to start');
         return;
     }
     
-    // Kontrolli enne, kas järgmine võidusõit on endiselt PLANNED
+    // Check first if the next race is still PLANNED
     try {
         const nextRace = await apiRequest('/api/public/next-race');
         
-        // Kui järgmine võidusõit ei ole meie valitud võidusõit või pole enam PLANNED
+        // If the next race is not our selected race or is no longer PLANNED
         if (!nextRace.id || nextRace.id !== currentRaceId) {
-            alert('Võidusõit on juba alustatud või muutunud. Värskendan nimekirja...');
+            alert('Race has already been started or changed. Refreshing list...');
             await loadNextRace();
             return;
         }
         
-        // Kontrolli, kas on sõitjaid
+        // Check if there are drivers
         if (!nextRace.drivers || nextRace.drivers.length === 0) {
-            alert('Võidusõit peab omama vähemalt ühte sõitjat!');
+            alert('Race must have at least one driver!');
             return;
         }
     } catch (error) {
         console.error('Error checking next race:', error);
-        // Jätka siiski võidusõidu alustamisega
+        // Continue with starting the race anyway
     }
     
     try {
@@ -91,28 +91,28 @@ async function startRace() {
             method: 'POST'
         });
         
-        // Värskenda võidusõitu serverist, et veenduda, et staatus on õige
+        // Refresh race from server to ensure status is correct
         await loadRacesAndUpdate();
         
-        // Socket.IO sündmus uuendab lehe automaatselt
+        // Socket.IO event will update the page automatically
     } catch (error) {
-        alert('Viga võidusõidu alustamisel: ' + error.message);
-        // Värskenda järgmist võidusõitu, kui võidusõit ei saanud alustatud
+        alert('Error starting race: ' + error.message);
+        // Refresh next race if race couldn't be started
         await loadNextRace();
     }
 }
 
 async function loadRacesAndUpdate() {
     try {
-        // Oota veidi, et server saaks võidusõidu uuendada
+        // Wait a bit for server to update the race
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Kontrolli, kas võidusõit on nüüd käimas
+        // Check if race is now running
         const runningRaces = await apiRequest('/api/public/running-races');
         const currentRace = runningRaces.find(r => r.id === currentRaceId);
         
         if (currentRace && currentRace.status === 'RUNNING') {
-            // Võidusõit on käimas, näita seda
+            // Race is running, show it
             if (document.getElementById('next-race-section') && !document.getElementById('next-race-section').classList.contains('hidden')) {
                 document.getElementById('next-race-section').classList.add('hidden');
                 document.getElementById('current-race-section').classList.remove('hidden');
@@ -120,19 +120,19 @@ async function loadRacesAndUpdate() {
             displayCurrentRace(currentRace);
             socket.emit('subscribe-countdown', currentRace.id);
         } else {
-            // Võidusõit ei ole käimas, laadi järgmine PLANNED võidusõit
+            // Race is not running, load next PLANNED race
             await loadNextRace();
         }
     } catch (error) {
         console.error('Error loading races:', error);
-        // Võidusõit võib olla käimas, aga me ei saanud seda kontrollida
-        // Socket.IO sündmus peaks lehe uuendama
+        // Race might be running, but we couldn't check it
+        // Socket.IO event should update the page
     }
 }
 
 async function loadCurrentRace() {
     try {
-        // Kasuta avalikku endpoint'i käimasolevate võidusõitude jaoks
+        // Use public endpoint for running races
         const runningRaces = await apiRequest('/api/public/running-races');
         const race = runningRaces.find(r => r.id === currentRaceId);
         
@@ -148,9 +148,43 @@ function displayCurrentRace(race) {
     const container = document.getElementById('current-race-info');
     container.innerHTML = `
         <h3>${race.name}</h3>
-        <p><strong>Staatus:</strong> ${race.status}</p>
-        <p><strong>Režiim:</strong> ${race.mode}</p>
+        <p><strong>Status:</strong> ${race.status}</p>
+        <p><strong>Mode:</strong> ${race.mode}</p>
     `;
+    
+    // Update flag display
+    updateFlagDisplay(race.mode);
+}
+
+function updateFlagDisplay(mode) {
+    const flagDisplay = document.getElementById('flag-display');
+    if (!flagDisplay) return;
+    
+    // Remove all mode classes
+    flagDisplay.className = 'flag-display';
+    
+    // Add correct mode class and flag
+    switch (mode) {
+        case 'SAFE':
+            flagDisplay.classList.add('flag-safe');
+            flagDisplay.innerHTML = '<div class="flag-content"><div class="flag-green"></div><span>SAFE</span></div>';
+            break;
+        case 'CAUTION':
+            flagDisplay.classList.add('flag-caution');
+            flagDisplay.innerHTML = '<div class="flag-content"><div class="flag-yellow"></div><span>CAUTION</span></div>';
+            break;
+        case 'DANGER':
+            flagDisplay.classList.add('flag-danger');
+            flagDisplay.innerHTML = '<div class="flag-content"><div class="flag-red"></div><span>DANGER</span></div>';
+            break;
+        case 'FINISHING':
+            flagDisplay.classList.add('flag-finishing');
+            flagDisplay.innerHTML = '<div class="flag-content"><div class="flag-checkered"></div><span>FINISHING</span></div>';
+            break;
+        default:
+            flagDisplay.classList.add('flag-safe');
+            flagDisplay.innerHTML = '<div class="flag-content"><div class="flag-green"></div><span>SAFE</span></div>';
+    }
 }
 
 async function setMode(mode) {
@@ -162,17 +196,17 @@ async function setMode(mode) {
             body: JSON.stringify({ mode })
         });
     } catch (error) {
-        alert('Viga režiimi muutmisel: ' + error.message);
+        alert('Error changing mode: ' + error.message);
     }
 }
 
 async function finishRace() {
     if (!currentRaceId) {
-        alert('Pole aktiivset võidusõitu');
+        alert('No active race');
         return;
     }
     
-    if (!confirm('Kas oled kindel, et soovid võidusõidu lõpetada?')) {
+    if (!confirm('Are you sure you want to finish the race?')) {
         return;
     }
     
@@ -186,7 +220,7 @@ async function finishRace() {
         currentRaceId = null;
         loadNextRace();
     } catch (error) {
-        alert('Viga võidusõidu lõpetamisel: ' + error.message);
+        alert('Error finishing race: ' + error.message);
     }
 }
 
@@ -196,16 +230,16 @@ function updateCountdown(remainingSeconds) {
     const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     
     document.getElementById('countdown-display').innerHTML = `
-        <div class="countdown-label">Järelejäänud aeg</div>
+        <div class="countdown-label">Remaining Time</div>
         <div class="countdown-time">${display}</div>
     `;
 }
 
-// Socket.IO kuulamine
+// Socket.IO listening
 socket.on('race-update', (race) => {
-    // Kui võidusõit alustati, näita praegust võidusõitu
+    // If race started, show current race
     if (race.status === 'RUNNING') {
-        // Kui see on võidusõit, mida me just alustasime või mis on juba käimas
+        // If this is the race we just started or is already running
         if (currentRaceId === race.id || currentRaceId === null) {
             if (document.getElementById('next-race-section') && !document.getElementById('next-race-section').classList.contains('hidden')) {
                 document.getElementById('next-race-section').classList.add('hidden');
@@ -217,14 +251,14 @@ socket.on('race-update', (race) => {
         }
     }
     
-    // Kui võidusõit muutus PLANNED-ist midagi muuks, aga see oli meie valitud võidusõit
+    // If race changed from PLANNED to something else, but it was our selected race
     if (race.status !== 'PLANNED' && race.id === currentRaceId && race.status !== 'RUNNING') {
-        // Võidusõit muutus (nt FINISHED), laadi järgmine
+        // Race changed (e.g. FINISHED), load next
         currentRaceId = null;
         loadNextRace();
     }
     
-    // Kui võidusõit lõppes, näita järgmist
+    // If race finished, show next
     if (race.status === 'FINISHED' && race.id === currentRaceId) {
         if (document.getElementById('current-race-section')) {
             document.getElementById('current-race-section').classList.add('hidden');
@@ -234,13 +268,13 @@ socket.on('race-update', (race) => {
         loadNextRace();
     }
     
-    // Uuenda praegust võidusõitu, kui see on aktiivne
+    // Update current race if it's active
     if (race.id === currentRaceId && race.status === 'RUNNING') {
         displayCurrentRace(race);
     }
     
-    // Kui võidusõit muutus PLANNED-ist midagi muuks, aga see ei ole meie valitud võidusõit
-    // Värskenda järgmist võidusõitu, kui praegu pole aktiivset võidusõitu
+    // If race changed from PLANNED to something else, but it's not our selected race
+    // Refresh next race if there's no active race currently
     if (race.status !== 'PLANNED' && currentRaceId === null) {
         loadNextRace();
     }
@@ -251,7 +285,7 @@ socket.on('countdown', (data) => {
         updateCountdown(data.remainingSeconds);
         
         if (!data.isRunning && currentRaceId) {
-            // Võidusõit lõppes
+            // Race finished
             setTimeout(() => {
                 document.getElementById('current-race-section').classList.add('hidden');
                 document.getElementById('next-race-section').classList.remove('hidden');
@@ -264,7 +298,8 @@ socket.on('countdown', (data) => {
 
 socket.on('flags', (data) => {
     if (data.raceId === currentRaceId) {
-        // Režiim muutus
+        // Mode changed, update flag display
+        updateFlagDisplay(data.mode);
     }
 });
 
@@ -276,4 +311,3 @@ socket.on('next-race', (nextRace) => {
         }
     }
 });
-

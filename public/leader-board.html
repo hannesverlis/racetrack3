@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="et">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +10,17 @@
     <div class="container">
         <h1>Leader Board</h1>
         
+        <div id="remaining-time-container" class="remaining-time-container hidden">
+            <div class="remaining-time-label">Remaining Time:</div>
+            <div id="remaining-time-display" class="remaining-time-display">00:00</div>
+        </div>
+        
         <div id="leaderboard-content">
-            <div id="no-race" class="message">Ootan võidusõitu...</div>
+            <div id="no-race" class="message">Waiting for race...</div>
             <div id="leaderboard-table" class="hidden"></div>
         </div>
         
-        <button onclick="toggleFullscreen()" class="fullscreen-btn">⛶ Täisekraan</button>
+        <button onclick="toggleFullscreen()" class="fullscreen-btn">⛶ Fullscreen</button>
     </div>
     
     <script src="/socket.io/socket.io.js"></script>

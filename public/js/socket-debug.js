@@ -6,100 +6,100 @@ let clientCount = 0;
 let autoScroll = true;
 let currentFilter = 'all';
 
-// Saatja kirjeldused
+// Sender descriptions
 const senderDescriptions = {
     server: {
         name: '🖥️ Server',
-        description: 'Server saadab sündmuse kõigile klientidele või konkreetsele kliendile',
+        description: 'Server sends event to all clients or specific client',
         color: '#667eea'
     },
     client: {
-        name: '💻 Klient',
-        description: 'Klient (brauser) saadab sündmuse serverile',
+        name: '💻 Client',
+        description: 'Client (browser) sends event to server',
         color: '#2ecc71'
     }
 };
 
-// Sündmuste kirjeldused
+// Event descriptions
 const eventDescriptions = {
     'race-update': {
-        name: 'Võidusõidu uuendus',
-        description: 'Võidusõidu staatuse või andmete muutus (PLANNED → RUNNING → FINISHED)',
+        name: 'Race Update',
+        description: 'Race status or data change (PLANNED → RUNNING → FINISHED)',
         icon: '🏁'
     },
     'leaderboard': {
-        name: 'Edetabel',
-        description: 'Edetabeli uuendus - näitab sõitjate kohti, ringe ja kiireimaid ringe',
+        name: 'Leaderboard',
+        description: 'Leaderboard update - shows driver positions, laps and fastest laps',
         icon: '📊'
     },
     'countdown': {
-        name: 'Ajastaja',
-        description: 'Võidusõidu ajastaja uuendus - näitab järelejäänud aega',
+        name: 'Timer',
+        description: 'Race timer update - shows remaining time',
         icon: '⏰'
     },
     'laps': {
-        name: 'Ringi registreerimine',
-        description: 'Uus ring on registreeritud - sisaldab ringi numbrit, aega ja sõitja infot',
+        name: 'Lap Registration',
+        description: 'New lap registered - contains lap number, time and driver info',
         icon: '⏱️'
     },
     'flags': {
-        name: 'Lipu režiim',
-        description: 'Võidusõidu lipu režiimi muutus (SAFE, CAUTION, DANGER, FINISHING)',
+        name: 'Flag Mode',
+        description: 'Race flag mode change (SAFE, CAUTION, DANGER, FINISHING)',
         icon: '🚩'
     },
     'next-race': {
-        name: 'Järgmine võidusõit',
-        description: 'Järgmise planeeritud võidusõidu info uuendus',
+        name: 'Next Race',
+        description: 'Next planned race info update',
         icon: '🏎️'
     },
     'subscribe-leaderboard': {
-        name: 'Tellib edetabelit',
-        description: 'Klient soovib saada edetabeli uuendusi konkreetse võidusõidu kohta',
+        name: 'Subscribe Leaderboard',
+        description: 'Client wants to receive leaderboard updates for specific race',
         icon: '📡'
     },
     'subscribe-countdown': {
-        name: 'Tellib ajastajat',
-        description: 'Klient soovib saada ajastaja uuendusi konkreetse võidusõidu kohta',
+        name: 'Subscribe Timer',
+        description: 'Client wants to receive timer updates for specific race',
         icon: '📡'
     },
     'subscribe-flags': {
-        name: 'Tellib lipu režiimi',
-        description: 'Klient soovib saada lipu režiimi uuendusi konkreetse võidusõidu kohta',
+        name: 'Subscribe Flag Mode',
+        description: 'Client wants to receive flag mode updates for specific race',
         icon: '📡'
     },
     'subscribe-next-race': {
-        name: 'Tellib järgmist võidusõitu',
-        description: 'Klient soovib saada järgmise võidusõidu infot',
+        name: 'Subscribe Next Race',
+        description: 'Client wants to receive next race info',
         icon: '📡'
     },
     'test-message': {
-        name: 'Test sõnum',
-        description: 'Test sõnum klientist serverile (hard-coded test)',
+        name: 'Test Message',
+        description: 'Test message from client to server (hard-coded test)',
         icon: '🧪'
     },
     'test-response': {
-        name: 'Test vastus',
-        description: 'Test vastus serverilt kliendile',
+        name: 'Test Response',
+        description: 'Test response from server to client',
         icon: '🧪'
     },
     'test-ping': {
-        name: 'Test ping',
-        description: 'Serveri automaatne test sõnum (iga 10 sekundit)',
+        name: 'Test Ping',
+        description: 'Server automatic test message (every 10 seconds)',
         icon: '🏓'
     },
     'connect': {
-        name: 'Ühendus loodud',
-        description: 'Socket.IO ühendus on edukalt loodud',
+        name: 'Connection Established',
+        description: 'Socket.IO connection successfully established',
         icon: '✅'
     },
     'disconnect': {
-        name: 'Ühendus katkestatud',
-        description: 'Socket.IO ühendus on katkestatud',
+        name: 'Connection Disconnected',
+        description: 'Socket.IO connection disconnected',
         icon: '❌'
     },
     'connect_error': {
-        name: 'Ühenduse viga',
-        description: 'Socket.IO ühenduse loomisel tekkis viga',
+        name: 'Connection Error',
+        description: 'Error occurred while establishing Socket.IO connection',
         icon: '⚠️'
     }
 };
@@ -107,7 +107,7 @@ const eventDescriptions = {
 function addMessage(sender, eventName, data) {
     const message = {
         id: messageCount++,
-        sender: sender, // 'server' või 'client'
+        sender: sender, // 'server' or 'client'
         eventName: eventName,
         data: data,
         timestamp: new Date()
@@ -138,7 +138,7 @@ function updateStats() {
 function renderMessages() {
     const container = document.getElementById('messages-container');
     
-    // Filtreeri sõnumid
+    // Filter messages
     let filteredMessages = messages;
     if (currentFilter !== 'all') {
         if (currentFilter === 'server' || currentFilter === 'client') {
@@ -149,7 +149,7 @@ function renderMessages() {
     }
     
     if (filteredMessages.length === 0) {
-        container.innerHTML = '<div class="empty-state">Pole sõnumeid</div>';
+        container.innerHTML = '<div class="empty-state">No messages</div>';
         return;
     }
     
@@ -157,11 +157,11 @@ function renderMessages() {
         const sender = senderDescriptions[msg.sender];
         const event = eventDescriptions[msg.eventName] || {
             name: msg.eventName,
-            description: 'Tundmatu sündmus',
+            description: 'Unknown event',
             icon: '📨'
         };
         
-        const timeStr = msg.timestamp.toLocaleTimeString('et-EE', {
+        const timeStr = msg.timestamp.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
@@ -198,7 +198,7 @@ function scrollToBottom() {
 }
 
 function clearMessages() {
-    if (confirm('Kas oled kindel, et soovid kõik sõnumid kustutada?')) {
+    if (confirm('Are you sure you want to delete all messages?')) {
         messages = [];
         messageCount = 0;
         serverCount = 0;
@@ -219,7 +219,7 @@ function toggleAutoScroll() {
 function filterMessages(filter) {
     currentFilter = filter;
     
-    // Uuenda nuppude aktiivsus
+    // Update button activity
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -237,19 +237,19 @@ function updateConnectionStatus(connected) {
     
     if (connected) {
         statusEl.className = 'connection-status connected';
-        statusEl.textContent = '✅ Ühendus: Ühendatud';
-        statusText.textContent = 'Ühendatud';
+        statusEl.textContent = '✅ Connection: Connected';
+        statusText.textContent = 'Connected';
     } else {
         statusEl.className = 'connection-status disconnected';
-        statusEl.textContent = '❌ Ühendus: Katkestatud';
-        statusText.textContent = 'Katkestatud';
+        statusEl.textContent = '❌ Connection: Disconnected';
+        statusText.textContent = 'Disconnected';
     }
 }
 
-// Oota, kuni socket on olemas
+// Wait until socket exists
 function initSocketDebug() {
     if (!socket) {
-        // Oota veidi, kuni socket on loodud
+        // Wait a bit for socket to be created
         setTimeout(initSocketDebug, 100);
         return;
     }
@@ -257,17 +257,17 @@ function initSocketDebug() {
     console.log('Socket found:', socket);
     console.log('Socket connected:', socket.connected);
     
-    // Uuenda ühenduse staatust kohe
+    // Update connection status immediately
     updateConnectionStatus(socket.connected);
     
-    // Intercepteerime Socket.IO sündmused
+    // Intercept Socket.IO events
     const originalEmit = socket.emit.bind(socket);
     socket.emit = function(eventName, ...args) {
         addMessage('client', eventName, args.length === 1 ? args[0] : args);
         return originalEmit(eventName, ...args);
     };
     
-    // Kuulame kõiki Socket.IO sündmusi
+    // Listen to all Socket.IO events
     socket.on('connect', () => {
         console.log('Socket connected event fired');
         updateConnectionStatus(true);
@@ -286,12 +286,12 @@ function initSocketDebug() {
         addMessage('server', 'connect_error', { error: error.message });
     });
     
-    // Kontrolli ühenduse staatust perioodiliselt
+    // Check connection status periodically
     setInterval(() => {
         if (socket) {
             const isConnected = socket.connected;
             const statusEl = document.getElementById('connection-status');
-            const currentStatus = statusEl ? statusEl.textContent.includes('Ühendatud') : false;
+            const currentStatus = statusEl ? statusEl.textContent.includes('Connected') : false;
             
             if (isConnected !== currentStatus) {
                 updateConnectionStatus(isConnected);
@@ -299,7 +299,7 @@ function initSocketDebug() {
         }
     }, 1000);
     
-    // Kuulame kõiki võidusõidu sündmusi
+    // Listen to all race events
     socket.on('race-update', (data) => {
         addMessage('server', 'race-update', data);
     });
@@ -324,7 +324,7 @@ function initSocketDebug() {
         addMessage('server', 'next-race', data);
     });
     
-    // Test sündmused
+    // Test events
     socket.on('test-response', (data) => {
         addMessage('server', 'test-response', data);
     });
@@ -333,7 +333,7 @@ function initSocketDebug() {
         addMessage('server', 'test-ping', data);
     });
     
-    // Algseadistus - kontrolli ühenduse staatust
+    // Initial setup - check connection status
     const checkConnection = () => {
         if (socket) {
             const isConnected = socket.connected || socket.io && socket.io.readyState === 'open';
@@ -342,34 +342,34 @@ function initSocketDebug() {
             if (isConnected && socket.id) {
                 addMessage('server', 'connect', { 
                     socketId: socket.id, 
-                    note: 'Ühendus on aktiivne',
+                    note: 'Connection is active',
                     readyState: socket.io ? socket.io.readyState : 'unknown'
                 });
             }
         }
     };
     
-    // Kontrolli kohe
+    // Check immediately
     checkConnection();
     
-    // Kontrolli ka veidi hiljem (kui socket on veel ühendamas)
+    // Check also a bit later (if socket is still connecting)
     setTimeout(checkConnection, 500);
     setTimeout(checkConnection, 1000);
     setTimeout(checkConnection, 2000);
 }
 
-// Parandame filter funktsiooni
+// Fix filter function
 document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         const filter = this.textContent.trim().toLowerCase();
         
-        if (filter === 'kõik') {
+        if (filter === 'all') {
             currentFilter = 'all';
         } else if (filter === 'server') {
             currentFilter = 'server';
-        } else if (filter === 'klient') {
+        } else if (filter === 'client') {
             currentFilter = 'client';
         } else {
             currentFilter = filter;
@@ -382,13 +382,13 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     });
 });
 
-// Test: Hard-coded sõnumid intervalliga
+// Test: Hard-coded messages at intervals
 let testInterval = null;
 
 function startTestMessages() {
     let testCounter = 0;
     
-    // Peata eelmine intervall, kui see on olemas
+    // Stop previous interval if it exists
     if (testInterval) {
         clearInterval(testInterval);
     }
@@ -396,36 +396,36 @@ function startTestMessages() {
     testInterval = setInterval(() => {
         testCounter++;
         
-        // Saada test sõnum serverile
+        // Send test message to server
         if (socket && socket.connected) {
             socket.emit('test-message', {
                 counter: testCounter,
-                message: 'Test sõnum klientist',
+                message: 'Test message from client',
                 timestamp: new Date().toISOString()
             });
         }
         
-        // Lisa ka kohalik test sõnum (näitab, et klient töötab)
+        // Add local test message (shows that client is working)
         addMessage('client', 'test-message', {
             counter: testCounter,
-            message: 'Test sõnum (kohalik)',
+            message: 'Test message (local)',
             timestamp: new Date().toISOString(),
-            note: 'See on kohalik test sõnum, et näha, et debug monitor töötab'
+            note: 'This is a local test message to see that debug monitor is working'
         });
         
-        // Iga 5. sõnum, lisa ka serveri poolne test
+        // Every 5th message, add server-side test
         if (testCounter % 5 === 0) {
             addMessage('server', 'test-response', {
                 counter: testCounter,
-                message: 'Test vastus serverilt',
+                message: 'Test response from server',
                 timestamp: new Date().toISOString(),
-                note: 'See on simuleeritud serveri vastus'
+                note: 'This is a simulated server response'
             });
         }
-    }, 2000); // Iga 2 sekundit
+    }, 2000); // Every 2 seconds
 }
 
-// Kuulame test vastuseid
+// Listen to test responses
 function setupTestListeners() {
     if (!socket) {
         setTimeout(setupTestListeners, 100);
@@ -437,13 +437,12 @@ function setupTestListeners() {
     });
 }
 
-// Algseadistus
+// Initialization
 initSocketDebug();
 setupTestListeners();
 
-// Käivita test sõnumid kohe
+// Start test messages immediately
 setTimeout(() => {
     startTestMessages();
-    console.log('Test sõnumid käivitatud - peaksid ilmuma iga 2 sekundi tagant');
+    console.log('Test messages started - should appear every 2 seconds');
 }, 500);
-

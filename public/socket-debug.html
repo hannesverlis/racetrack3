@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="et">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -215,38 +215,38 @@
         <div class="debug-header">
             <h1>🔌 Socket.IO Debug Monitor</h1>
             <div class="controls">
-                <button onclick="clearMessages()">Tühjenda</button>
+                <button onclick="clearMessages()">Clear</button>
                 <button onclick="toggleAutoScroll()">Auto-scroll: <span id="auto-scroll-status">ON</span></button>
             </div>
         </div>
         
         <div class="stats">
             <div class="stat-card">
-                <h3>Kokku sõnumeid</h3>
+                <h3>Total Messages</h3>
                 <div class="value" id="total-messages">0</div>
             </div>
             <div class="stat-card">
-                <h3>Serverist</h3>
+                <h3>From Server</h3>
                 <div class="value" id="server-messages">0</div>
             </div>
             <div class="stat-card">
-                <h3>Kliendist</h3>
+                <h3>From Client</h3>
                 <div class="value" id="client-messages">0</div>
             </div>
             <div class="stat-card">
-                <h3>Ühenduse staatus</h3>
+                <h3>Connection Status</h3>
                 <div class="value" id="connection-status-text">-</div>
             </div>
         </div>
         
         <div id="connection-status" class="connection-status disconnected">
-            Ühendus: Katkestatud
+            Connection: Disconnected
         </div>
         
         <div class="filter-buttons">
-            <button class="filter-btn active" onclick="filterMessages('all')">Kõik</button>
+            <button class="filter-btn active" onclick="filterMessages('all')">All</button>
             <button class="filter-btn" onclick="filterMessages('server')">Server</button>
-            <button class="filter-btn" onclick="filterMessages('client')">Klient</button>
+            <button class="filter-btn" onclick="filterMessages('client')">Client</button>
             <button class="filter-btn" onclick="filterMessages('race-update')">race-update</button>
             <button class="filter-btn" onclick="filterMessages('leaderboard')">leaderboard</button>
             <button class="filter-btn" onclick="filterMessages('countdown')">countdown</button>
@@ -257,7 +257,7 @@
         
         <div class="messages-container" id="messages-container">
             <div class="empty-state">
-                Ootan Socket.IO sõnumeid...
+                Waiting for Socket.IO messages...
             </div>
         </div>
     </div>
