@@ -304,10 +304,18 @@ socket.on('flags', (data) => {
 });
 
 socket.on('next-race', (nextRace) => {
-    if (!currentRaceId) {
-        displayNextRace(nextRace);
-        if (nextRace.id) {
-            currentRaceId = nextRace.id;
+    // Update next race info if we're showing the next race section
+    // or if there's no current race running
+    const nextRaceSection = document.getElementById('next-race-section');
+    const isShowingNextRace = nextRaceSection && !nextRaceSection.classList.contains('hidden');
+    
+    if (isShowingNextRace || !currentRaceId) {
+        // Only update if this is the next race (not a running race)
+        if (!currentRaceId || (nextRace.id && nextRace.id === currentRaceId)) {
+            displayNextRace(nextRace);
+            if (nextRace.id) {
+                currentRaceId = nextRace.id;
+            }
         }
     }
 });

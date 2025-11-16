@@ -40,6 +40,7 @@ function updateFlags(mode) {
             flagsDisplay.classList.add('finishing');
             flagsDisplay.innerHTML = `
                 <div class="flag-content">
+                    <div class="flag-checkered"></div>
                     <h1>FINISHING</h1>
                     <p>Finishing</p>
                 </div>
@@ -68,8 +69,8 @@ socket.on('race-update', (race) => {
         updateFlags(race.mode);
         socket.emit('subscribe-flags', race.id);
     } else if (race.status === 'FINISHED' && race.id === currentRaceId) {
-        // Race finished - show DANGER flag
-        updateFlags('DANGER');
+        // Race finished - show FINISHING flag
+        updateFlags('FINISHING');
     }
 });
 

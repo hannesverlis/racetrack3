@@ -286,14 +286,24 @@ socket.on('race-update', (race) => {
         }
         updateRaceSelect();
         
-        // If selected race was updated and it's RUNNING, update drivers too
+        // If selected race was updated and it's RUNNING, update drivers and buttons
         if (race.id === currentRaceId && race.status === 'RUNNING') {
+            // Update lap buttons if drivers changed
             displayLapButtons(race.drivers);
-        }
-        
-        // If race changed from PLANNED -> RUNNING and it's selected, activate lap registration
-        if (race.id === currentRaceId && race.status === 'RUNNING') {
-            loadRaceDrivers();
+            
+            // Ensure sections are visible (don't reload to preserve statistics)
+            document.getElementById('lap-buttons-section').classList.remove('hidden');
+            document.getElementById('lap-stats-section').classList.remove('hidden');
+            
+            // Check if this is a status change from PLANNED to RUNNING
+            // We need to check the previous state, not current state
+            const previousRace = races.find(r => r.id === race.id);
+            const wasPlanned = previousRace && previousRace.status === 'PLANNED';
+            
+            // Only reload if race just changed from PLANNED to RUNNING
+            if (wasPlanned && race.status === 'RUNNING') {
+                loadRaceDrivers();
+            }
         }
     } else {
         // Race finished or was deleted

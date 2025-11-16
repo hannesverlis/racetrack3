@@ -4,3 +4,10 @@ node_modules/
 *.log
 .DS_Store
 
+# Socket.IO files
+socket.io*
+
+# Documentation files
+ÕPPE_PLAAN.md
+INTELLIJ_KÄIVITAMINE.md
+

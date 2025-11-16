@@ -440,9 +440,3 @@ function setupTestListeners() {
 // Initialization
 initSocketDebug();
 setupTestListeners();
-
-// Start test messages immediately
-setTimeout(() => {
-    startTestMessages();
-    console.log('Test messages started - should appear every 2 seconds');
-}, 500);

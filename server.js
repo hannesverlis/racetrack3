@@ -287,7 +287,7 @@ app.post('/api/control/:raceId/finish', checkAccessKey(ACCESS_KEYS.SAFETY_OFFICI
   }
   
   race.status = 'FINISHED';
-  race.mode = 'DANGER';
+  race.mode = 'FINISHING';
   race.endTime = new Date();
   
   // Stop timer
@@ -465,7 +465,7 @@ function startRaceTimer(raceId) {
     if (remainingSeconds === 0) {
       // Time ran out - finish race automatically
       race.status = 'FINISHED';
-      race.mode = 'DANGER';
+      race.mode = 'FINISHING';
       race.endTime = now;
       stopRaceTimer(raceId);
       
@@ -557,6 +557,7 @@ io.on('connection', (socket) => {
 
 // Server startup
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server accessible at http://0.0.0.0:${PORT} (network)`);
   console.log(`Dev mode: ${DEV_MODE ? 'ON (1 minute)' : 'OFF (10 minutes)'}`);
 });
