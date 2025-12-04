@@ -55,9 +55,20 @@ function displayRaces() {
                 <strong>Drivers:</strong>
                 <ul>
                     ${race.drivers.map(driver => `
-                        <li>
-                            ${driver.name} - Car #${driver.carNumber}
-                            <button onclick="removeDriver(${race.id}, ${driver.id})" class="remove-driver-btn">🗑️</button>
+                        <li id="driver-item-${driver.id}">
+                            <span id="driver-display-${driver.id}">
+                                ${driver.name} - Car #${driver.carNumber}
+                            </span>
+                            <div id="driver-edit-form-${driver.id}" class="driver-edit-form hidden">
+                                <input type="text" id="edit-name-${driver.id}" value="${driver.name}" placeholder="Driver name" />
+                                <input type="number" id="edit-car-${driver.id}" value="${driver.carNumber}" placeholder="Car number" min="1" />
+                                <button onclick="saveDriverEdit(${race.id}, ${driver.id})" class="save-btn">Save</button>
+                                <button onclick="cancelEditDriver(${driver.id}, '${driver.name.replace(/'/g, "\\'")}', ${driver.carNumber})" class="cancel-btn">Cancel</button>
+                            </div>
+                            <div id="driver-actions-${driver.id}">
+                                <button onclick="editDriver(${race.id}, ${driver.id})" class="edit-driver-btn">✏️</button>
+                                <button onclick="removeDriver(${race.id}, ${driver.id})" class="remove-driver-btn">🗑️</button>
+                            </div>
                         </li>
                     `).join('')}
                 </ul>
@@ -216,6 +227,60 @@ async function addDriverToRace(raceId) {
 }
 
 // Function removed, drivers are now displayed directly in displayRaces() function
+
+function editDriver(raceId, entryId) {
+    // Hide display and actions
+    document.getElementById(`driver-display-${entryId}`).classList.add('hidden');
+    document.getElementById(`driver-actions-${entryId}`).classList.add('hidden');
+    
+    // Show edit form
+    document.getElementById(`driver-edit-form-${entryId}`).classList.remove('hidden');
+    
+    // Focus on name input
+    document.getElementById(`edit-name-${entryId}`).focus();
+}
+
+function cancelEditDriver(entryId, originalName, originalCarNumber) {
+    // Restore original values
+    document.getElementById(`edit-name-${entryId}`).value = originalName;
+    document.getElementById(`edit-car-${entryId}`).value = originalCarNumber;
+    
+    // Hide edit form
+    document.getElementById(`driver-edit-form-${entryId}`).classList.add('hidden');
+    
+    // Show display and actions
+    document.getElementById(`driver-display-${entryId}`).classList.remove('hidden');
+    document.getElementById(`driver-actions-${entryId}`).classList.remove('hidden');
+}
+
+async function saveDriverEdit(raceId, entryId) {
+    const name = document.getElementById(`edit-name-${entryId}`).value.trim();
+    const carNumber = parseInt(document.getElementById(`edit-car-${entryId}`).value);
+    
+    // Validation
+    if (!name) {
+        alert('Enter driver name');
+        return;
+    }
+    
+    if (!carNumber || carNumber < 1) {
+        alert('Enter valid car number');
+        return;
+    }
+    
+    try {
+        // Update driver
+        await apiRequest(`/api/races/${raceId}/drivers/${entryId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name, carNumber })
+        });
+        
+        // Refresh race list to get updated data
+        await loadRaces();
+    } catch (error) {
+        alert('Error updating driver: ' + error.message);
+    }
+}
 
 async function removeDriver(raceId, entryId) {
     if (!confirm('Are you sure you want to remove this driver?')) {

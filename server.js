@@ -176,6 +176,60 @@ app.post('/api/races/:raceId/drivers', checkAccessKey(ACCESS_KEYS.RECEPTIONIST),
   res.status(201).json(entry);
 });
 
+// PUT /api/races/:raceId/drivers/:entryId - update driver
+app.put('/api/races/:raceId/drivers/:entryId', checkAccessKey(ACCESS_KEYS.RECEPTIONIST), (req, res) => {
+  const raceId = parseInt(req.params.raceId);
+  const entryId = parseInt(req.params.entryId);
+  const { name, carNumber } = req.body;
+  
+  const race = races.find(r => r.id === raceId);
+  if (!race) {
+    return res.status(404).json({ error: 'Race not found' });
+  }
+  
+  if (race.status !== 'PLANNED') {
+    return res.status(400).json({ error: 'Can only edit drivers in PLANNED races' });
+  }
+  
+  const entryIndex = race.drivers.findIndex(d => d.id === entryId);
+  if (entryIndex === -1) {
+    return res.status(404).json({ error: 'Driver entry not found' });
+  }
+  
+  if (!name || name.trim() === '') {
+    return res.status(400).json({ error: 'Driver name is required' });
+  }
+  
+  if (!carNumber || typeof carNumber !== 'number') {
+    return res.status(400).json({ error: 'Car number is required' });
+  }
+  
+  // Check uniqueness (excluding current driver)
+  const duplicateName = race.drivers.find((d, index) => 
+    index !== entryIndex && d.name.toLowerCase() === name.trim().toLowerCase()
+  );
+  if (duplicateName) {
+    return res.status(400).json({ error: 'Driver name must be unique' });
+  }
+  
+  const duplicateCarNumber = race.drivers.find((d, index) => 
+    index !== entryIndex && d.carNumber === carNumber
+  );
+  if (duplicateCarNumber) {
+    return res.status(400).json({ error: 'Car number must be unique' });
+  }
+  
+  // Update driver
+  race.drivers[entryIndex].name = name.trim();
+  race.drivers[entryIndex].carNumber = carNumber;
+  
+  // Send Socket.IO event
+  io.emit('race-update', race);
+  io.emit('next-race', getNextRace());
+  
+  res.json(race.drivers[entryIndex]);
+});
+
 // DELETE /api/races/:raceId/drivers/:entryId - remove driver
 app.delete('/api/races/:raceId/drivers/:entryId', checkAccessKey(ACCESS_KEYS.RECEPTIONIST), (req, res) => {
   const raceId = parseInt(req.params.raceId);

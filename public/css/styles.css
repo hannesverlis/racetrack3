@@ -186,10 +186,26 @@ select:focus {
     justify-content: space-between;
     align-items: center;
     border-left: 3px solid #667eea;
+    gap: 10px;
 }
 
 .drivers-list li:hover {
     background: #e9ecef;
+}
+
+.edit-driver-btn {
+    background: #3498db;
+    color: white;
+    padding: 5px 10px;
+    font-size: 0.85em;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    margin: 0 5px 0 0;
+}
+
+.edit-driver-btn:hover {
+    background: #2980b9;
 }
 
 .remove-driver-btn {
@@ -205,6 +221,67 @@ select:focus {
 
 .remove-driver-btn:hover {
     background: #c0392b;
+}
+
+.driver-edit-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+    margin-right: 10px;
+}
+
+.driver-edit-form input {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px;
+    border: 2px solid #3498db;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.driver-edit-form input:focus {
+    outline: none;
+    border-color: #2980b9;
+}
+
+.driver-edit-form .save-btn {
+    background: #2ecc71;
+    color: white;
+    padding: 8px 15px;
+    font-size: 0.85em;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.driver-edit-form .save-btn:hover {
+    background: #27ae60;
+}
+
+.driver-edit-form .cancel-btn {
+    background: #95a5a6;
+    color: white;
+    padding: 8px 15px;
+    font-size: 0.85em;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.driver-edit-form .cancel-btn:hover {
+    background: #7f8c8d;
+}
+
+.drivers-list li > span {
+    flex: 1;
+}
+
+.drivers-list li > div {
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .no-drivers {
