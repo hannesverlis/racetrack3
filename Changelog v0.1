@@ -1,0 +1,63 @@
+
+1. When the race mode changes to "Finish", the race controls disappear, and a END button appears to end the race session.
+ There is no end button. When race status is set to "finish", a "end" button has to appear to end the race. 
+- END button lisatud. loogika muudetud
+ 
+ 2. When the Safety Official ends the race session, the next session appears on their interface.
+There is no end button. Currently its done by "finish" button.
+ -END button lisatud.
+
+
+3. When the race session is ended, the race mode changes to "Danger".
+There is no end button. When race status is set to "finish", a "end" button has to appear to end the race. 
+  -END button lisatud.
+
+4. The leaderboard is ordered by fastest lap times.
+Currently it is ordered by how many laps are completed
+- Järjestus kiireima ringi aja järgi. 
+
+5. The leaderboard shows the current lap for each car.
+The first lap starts when the car crosses the leader board for the first time.
+"The first lap starts when the car crosses the leader board for the first time." --> currently, when race is started the lap is set to 1 for every car. 
+ - alguses on  lap=0
+
+6. Communication between interfaces is in real-time. API calls must not be used to send data.
+For example, when the race mode is changed by the Safety Official, the flag displays change in real time.
+
+- tehtud alljärgnevad muudatused
+Front Desk (public/js/front-desk.js):
+
+createRace() → socket.emit('create-race', { name })
+deleteRace() → socket.emit('delete-race', { raceId })
+addDriverToRace() → socket.emit('add-driver', { raceId, name, carNumber })
+saveDriverEdit() → socket.emit('edit-driver', { raceId, entryId, name, carNumber })
+removeDriver() → socket.emit('remove-driver', { raceId, entryId })
+loadRaces() → socket.emit('get-races') või kasutada race-update event'e
+
+Race Control (public/js/race-control.js):
+
+startRace() → socket.emit('start-race', { raceId })
+finishRace() → socket.emit('finish-race', { raceId })
+endRaceSession() → socket.emit('end-race-session', { raceId })
+setMode() → socket.emit('set-mode', { raceId, mode })
+loadNextRace() → kasutada next-race Socket.IO event'i (juba olemas)
+
+Lap-line Tracker (public/js/lap-line-tracker.js):
+
+registerLap() → socket.emit('register-lap', { raceId, carNumber })
+loadRaces() → kasutada race-update event'e või socket.emit('get-available-races')
+
+
+7. The Race Control interface is designed for a mobile interface.
+- tehtud
+
+8. The Lap-line Tracker is designed for a tablet, featuring large tappable buttons for each car.
+It should work in Landscape or Portrait.
+ - tehtud
+
+9. The server will not start unless environment variables are set for interface access keys.
+- muudetud koodi. lisatud .env 
+
+10.The system state is persisted.
+When the server is restarted, the system resumes with the exact same. I.e. the race counter continues counting down, and upcoming races are not lost.
+ - serveri käivitamisel luuakse data kaust ja kolm json faili

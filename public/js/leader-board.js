@@ -63,8 +63,10 @@ function displayLeaderboard(leaderboard) {
         'FINISHING': '#34495e'
     };
     
+    const flagColor = modeColors[leaderboard.mode] || '#333';
+    
     container.innerHTML = `
-        <table class="leaderboard-table">
+        <table class="leaderboard-table" style="border: 3px solid ${flagColor};">
             <thead>
                 <tr>
                     <th>Position</th>
@@ -84,11 +86,11 @@ function displayLeaderboard(leaderboard) {
                             <td class="position">${index + 1}</td>
                             <td>${entry.driverName}</td>
                             <td>#${entry.carNumber}</td>
-                            <td>${entry.currentLap}</td>
+                            <td>${entry.currentLap === 0 ? '0' : entry.currentLap}</td>
                             <td>${entry.fastestLap ? formatLapTime(entry.fastestLap) : '-'}</td>
                             <td>${formatTime(entry.remainingTime)}</td>
                             <td>
-                                <span style="color: ${modeColors[leaderboard.mode] || '#333'}; font-size: 1.5em;">
+                                <span style="color: ${flagColor}; font-size: 1.5em;">
                                     ${getFlagEmoji(leaderboard.mode)}
                                 </span>
                             </td>

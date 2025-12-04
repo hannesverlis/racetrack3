@@ -108,8 +108,8 @@ Server is accessible at `http://localhost:3000`
    - 🟢 **Safe:** Normal race
    - 🟡 **Caution:** Slow race
    - 🔴 **Danger:** Race stopped
-   - 🏁 **Finish:** Finish race
-4. **Finish Race:** Click "Finish Race"
+   - 🏁 **Finish:** Race finished
+4. **Finish Race:** Click "END"
 
 ### Lap-line Tracker (Lap-line Observer)
 

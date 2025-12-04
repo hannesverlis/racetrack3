@@ -3,8 +3,6 @@ let lastFinishedRaceId = null;
 function displayNextRace(nextRace) {
     const noRace = document.getElementById('no-race');
     const raceInfo = document.getElementById('race-info');
-    const raceName = document.getElementById('race-name');
-    const driversList = document.getElementById('drivers-list');
     const paddockMessage = document.getElementById('paddock-message');
     
     // If there's a paddock message, hide it when next race is available
@@ -12,7 +10,10 @@ function displayNextRace(nextRace) {
         paddockMessage.classList.add('hidden');
     }
     
-    if (!nextRace.id) {
+    // Check if we have races array (new format) or single race (old format)
+    const racesToShow = nextRace.races || (nextRace.id ? [nextRace] : []);
+    
+    if (racesToShow.length === 0) {
         noRace.classList.remove('hidden');
         raceInfo.classList.add('hidden');
         noRace.textContent = nextRace.message || 'No planned races';
@@ -22,21 +23,27 @@ function displayNextRace(nextRace) {
     noRace.classList.add('hidden');
     raceInfo.classList.remove('hidden');
     
-    raceName.textContent = nextRace.name;
-    
-    if (nextRace.drivers.length === 0) {
-        driversList.innerHTML = '<p>No drivers</p>';
-    } else {
-        driversList.innerHTML = `
-            <ul style="list-style: none; padding: 0;">
-                ${nextRace.drivers.map(driver => `
-                    <li style="padding: 10px; margin: 5px 0; background: white; border-radius: 5px; border-left: 4px solid #667eea;">
-                        <strong>${driver.name}</strong> - Car #${driver.carNumber}
-                    </li>
-                `).join('')}
-            </ul>
-        `;
-    }
+    // Display all planned races
+    raceInfo.innerHTML = `
+        ${racesToShow.map((race, index) => `
+            <div class="race-item" style="margin-bottom: 30px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h2 style="margin-top: 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                    ${index === 0 ? '🏁 Next Race' : `Race ${index + 1}`}: ${race.name}
+                </h2>
+                <h3 style="margin-top: 15px; margin-bottom: 10px; color: #555;">Drivers</h3>
+                ${race.drivers.length === 0 ? 
+                    '<p style="color: #999; font-style: italic;">No drivers registered</p>' :
+                    `<ul style="list-style: none; padding: 0; margin: 0;">
+                        ${race.drivers.map(driver => `
+                            <li style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #667eea;">
+                                <strong>${driver.name}</strong> - Car #${driver.carNumber}
+                            </li>
+                        `).join('')}
+                    </ul>`
+                }
+            </div>
+        `).join('')}
+    `;
 }
 
 function showPaddockMessage() {
@@ -53,35 +60,30 @@ function showPaddockMessage() {
 
 // Socket.IO listening
 socket.on('next-race', (nextRace) => {
+    // Always update display when next-race event is received
+    // This ensures that if there's no next race, we show "No planned races" instead of paddock message
     displayNextRace(nextRace);
 });
 
 socket.on('race-update', (race) => {
-    // If race finished, show paddock message
+    // If race finished, show paddock message temporarily
     if (race.status === 'FINISHED') {
         lastFinishedRaceId = race.id;
         showPaddockMessage();
         
-        // Hide paddock message after 10 seconds or when next race is available
+        // After a short delay, check for next race
+        // The next-race Socket.IO event will update the display automatically
         setTimeout(() => {
-            // Check if there's a new next race
-            fetch('/api/public/next-race')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.id && data.id !== lastFinishedRaceId) {
-                        displayNextRace(data);
-                    }
-                })
-                .catch(err => console.error('Error loading next race:', err));
-        }, 10000); // 10 seconds
+            // Request next race update via Socket.IO
+            socket.emit('subscribe-next-race');
+        }, 2000); // 2 seconds - shorter delay
     }
 });
 
 // Subscribe to next race updates
-socket.emit('subscribe-next-race');
+socket.on('connect', () => {
+    socket.emit('subscribe-next-race');
+});
 
-// Load initially
-fetch('/api/public/next-race')
-    .then(res => res.json())
-    .then(data => displayNextRace(data))
-    .catch(err => console.error('Error loading next race:', err));
+// Load initially via Socket.IO
+socket.emit('subscribe-next-race');

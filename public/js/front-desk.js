@@ -1,8 +1,30 @@
-const RECEPTIONIST_KEY = '8ded6076';
+let RECEPTIONIST_KEY = null;
 let races = [];
+
+// Load access keys from server
+async function loadAccessKeys() {
+    try {
+        const response = await fetch('/api/public/config');
+        const config = await response.json();
+        RECEPTIONIST_KEY = config.accessKeys.receptionist;
+    } catch (error) {
+        console.error('Error loading access keys:', error);
+        // Fallback to default if server config fails
+        RECEPTIONIST_KEY = '8ded6076';
+    }
+}
 
 function checkAccessKey() {
     const key = document.getElementById('access-key').value.trim();
+    
+    // Wait for access key to be loaded
+    if (!RECEPTIONIST_KEY) {
+        document.getElementById('login-error').textContent = 'Loading access keys...';
+        setTimeout(() => {
+            checkAccessKey();
+        }, 100);
+        return;
+    }
     
     if (key === RECEPTIONIST_KEY) {
         accessKey = key;
@@ -17,14 +39,20 @@ function checkAccessKey() {
     }
 }
 
-async function loadRaces() {
-    try {
-        races = await apiRequest('/api/races');
-        displayRaces();
-    } catch (error) {
-        console.error('Error loading races:', error);
-        alert('Error loading races: ' + error.message);
-    }
+// Load access keys when page loads
+loadAccessKeys();
+
+function loadRaces() {
+    // Request races via Socket.IO
+    socket.emit('get-races', { accessKey }, (response) => {
+        if (response.error) {
+            console.error('Error loading races:', response.error);
+            alert('Error loading races: ' + response.error);
+        } else {
+            races = response.races;
+            displayRaces();
+        }
+    });
 }
 
 function displayRaces() {
@@ -148,7 +176,7 @@ function displayRaces() {
     container.innerHTML = html;
 }
 
-async function createRace() {
+function createRace() {
     const name = document.getElementById('race-name').value.trim();
     
     if (!name) {
@@ -156,33 +184,28 @@ async function createRace() {
         return;
     }
     
-    try {
-        const race = await apiRequest('/api/races', {
-            method: 'POST',
-            body: JSON.stringify({ name })
-        });
-        
-        document.getElementById('race-name').value = '';
-        await loadRaces();
-    } catch (error) {
-        alert('Error creating race: ' + error.message);
-    }
+    socket.emit('create-race', { accessKey, name }, (response) => {
+        if (response.error) {
+            alert('Error creating race: ' + response.error);
+        } else {
+            document.getElementById('race-name').value = '';
+            loadRaces();
+        }
+    });
 }
 
-async function deleteRace(raceId) {
+function deleteRace(raceId) {
     if (!confirm('Are you sure you want to delete this race?')) {
         return;
     }
     
-    try {
-        await apiRequest(`/api/races/${raceId}`, {
-            method: 'DELETE'
-        });
-        
-        await loadRaces();
-    } catch (error) {
-        alert('Error deleting race: ' + error.message);
-    }
+    socket.emit('delete-race', { accessKey, raceId }, (response) => {
+        if (response.error) {
+            alert('Error deleting race: ' + response.error);
+        } else {
+            loadRaces();
+        }
+    });
 }
 
 async function addDriverToRace(raceId) {
@@ -208,22 +231,18 @@ async function addDriverToRace(raceId) {
         return;
     }
     
-    try {
-        // Add driver
-        await apiRequest(`/api/races/${raceId}/drivers`, {
-            method: 'POST',
-            body: JSON.stringify({ name, carNumber })
-        });
-        
-        // Clear fields
-        document.getElementById(`driver-name-${raceId}`).value = '';
-        document.getElementById(`car-number-${raceId}`).value = '';
-        
-        // Refresh race list from server to get fresh data
-        await loadRaces();
-    } catch (error) {
-        alert('Error adding driver: ' + error.message);
-    }
+    socket.emit('add-driver', { accessKey, raceId, name, carNumber }, (response) => {
+        if (response.error) {
+            alert('Error adding driver: ' + response.error);
+        } else {
+            // Clear fields
+            document.getElementById(`driver-name-${raceId}`).value = '';
+            document.getElementById(`car-number-${raceId}`).value = '';
+            
+            // Refresh race list from server to get fresh data
+            loadRaces();
+        }
+    });
 }
 
 // Function removed, drivers are now displayed directly in displayRaces() function
@@ -268,18 +287,14 @@ async function saveDriverEdit(raceId, entryId) {
         return;
     }
     
-    try {
-        // Update driver
-        await apiRequest(`/api/races/${raceId}/drivers/${entryId}`, {
-            method: 'PUT',
-            body: JSON.stringify({ name, carNumber })
-        });
-        
-        // Refresh race list to get updated data
-        await loadRaces();
-    } catch (error) {
-        alert('Error updating driver: ' + error.message);
-    }
+    socket.emit('edit-driver', { accessKey, raceId, entryId, name, carNumber }, (response) => {
+        if (response.error) {
+            alert('Error updating driver: ' + response.error);
+        } else {
+            // Refresh race list to get updated data
+            loadRaces();
+        }
+    });
 }
 
 async function removeDriver(raceId, entryId) {
@@ -287,16 +302,14 @@ async function removeDriver(raceId, entryId) {
         return;
     }
     
-    try {
-        await apiRequest(`/api/races/${raceId}/drivers/${entryId}`, {
-            method: 'DELETE'
-        });
-        
-        // Refresh race list
-        await loadRaces();
-    } catch (error) {
-        alert('Error removing driver: ' + error.message);
-    }
+    socket.emit('remove-driver', { accessKey, raceId, entryId }, (response) => {
+        if (response.error) {
+            alert('Error removing driver: ' + response.error);
+        } else {
+            // Refresh race list
+            loadRaces();
+        }
+    });
 }
 
 // Socket.IO listening

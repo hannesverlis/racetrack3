@@ -423,6 +423,23 @@ select:focus {
     background: #c0392b;
 }
 
+.end-btn {
+    background: #c0392b;
+    color: white;
+    padding: 15px 40px;
+    font-size: 1.2em;
+    margin-top: 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+}
+
+.end-btn:hover {
+    background: #a93226;
+}
+
 /* Flag display for race control */
 .flag-display {
     margin: 20px 0;
@@ -900,6 +917,320 @@ nav a:hover {
     
     .mode-btn {
         width: 100%;
+    }
+}
+
+/* Mobile-first design for Race Control - Touch devices */
+@media (pointer: coarse) and (hover: none) {
+    /* Race Control - Mobile optimized */
+    body.race-control-page .container {
+        max-width: 100%;
+        padding: 10px;
+        margin: 0;
+        border-radius: 0;
+        min-height: 100vh;
+    }
+    
+    body.race-control-page h1 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+    }
+    
+    body.race-control-page h2 {
+        font-size: 1.4em;
+        margin-bottom: 15px;
+    }
+    
+    body.race-control-page h3 {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+    
+    body.race-control-page section {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    /* Countdown display - larger for mobile */
+    body.race-control-page .countdown-display {
+        padding: 30px 15px;
+        margin: 15px 0;
+    }
+    
+    body.race-control-page .countdown-label {
+        font-size: 1.5em;
+        margin-bottom: 15px;
+    }
+    
+    body.race-control-page .countdown-time {
+        font-size: 4.5em;
+    }
+    
+    /* Mode controls - large touch-friendly buttons */
+    body.race-control-page .mode-controls {
+        flex-direction: column;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    body.race-control-page .mode-btn {
+        width: 100%;
+        padding: 25px 20px;
+        font-size: 1.4em;
+        min-height: 70px;
+        touch-action: manipulation;
+    }
+    
+    /* Flag display - larger for mobile */
+    body.race-control-page .flag-display {
+        margin: 20px 0;
+        padding: 30px 15px;
+        min-height: 200px;
+    }
+    
+    body.race-control-page .flag-display .flag-content span {
+        font-size: 2em;
+    }
+    
+    /* Finish button - large and prominent */
+    body.race-control-page .finish-btn {
+        width: 100%;
+        padding: 25px 20px;
+        font-size: 1.5em;
+        min-height: 70px;
+        margin-top: 20px;
+        touch-action: manipulation;
+    }
+    
+    /* Login screen - mobile optimized */
+    body.race-control-page .login-screen {
+        padding: 30px 20px;
+    }
+    
+    body.race-control-page .login-screen input {
+        font-size: 1.1em;
+        padding: 18px;
+        min-height: 50px;
+    }
+    
+    body.race-control-page .login-screen button {
+        width: 100%;
+        padding: 18px;
+        font-size: 1.2em;
+        min-height: 50px;
+        touch-action: manipulation;
+    }
+    
+    /* Start race button */
+    body.race-control-page #start-race-btn {
+        width: 100%;
+        padding: 20px;
+        font-size: 1.3em;
+        min-height: 60px;
+        touch-action: manipulation;
+    }
+    
+    /* Next race info - mobile friendly */
+    body.race-control-page #next-race-info {
+        font-size: 1.1em;
+    }
+    
+    body.race-control-page #next-race-info ul {
+        padding-left: 20px;
+    }
+    
+    body.race-control-page #next-race-info li {
+        margin: 8px 0;
+    }
+    
+    /* Current race info */
+    body.race-control-page #current-race-info {
+        font-size: 1.1em;
+    }
+    
+    body.race-control-page #current-race-info p {
+        margin: 10px 0;
+        font-size: 1.1em;
+    }
+}
+
+/* Tablet-first design for Lap-line Tracker - Touch devices */
+@media (pointer: coarse) and (hover: none) {
+    /* Lap-line Tracker - Tablet optimized */
+    body.lap-tracker-page .container {
+        max-width: 100%;
+        padding: 15px;
+        margin: 0;
+        min-height: 100vh;
+    }
+    
+    body.lap-tracker-page h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+    
+    body.lap-tracker-page h2 {
+        font-size: 1.6em;
+        margin-bottom: 15px;
+    }
+    
+    body.lap-tracker-page section {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    /* Race select - larger for tablet */
+    body.lap-tracker-page #race-select {
+        width: 100%;
+        padding: 15px;
+        font-size: 1.2em;
+        min-height: 50px;
+        touch-action: manipulation;
+    }
+    
+    /* Lap buttons - large tappable buttons for tablet */
+    body.lap-tracker-page .lap-buttons {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    /* Portrait orientation - 2 columns */
+    @media (orientation: portrait) {
+        body.lap-tracker-page .lap-buttons {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    /* Landscape orientation - 3-4 columns */
+    @media (orientation: landscape) {
+        body.lap-tracker-page .lap-buttons {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
+    }
+    
+    body.lap-tracker-page .lap-button {
+        padding: 35px 20px;
+        font-size: 2.2em;
+        min-height: 140px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(102, 126, 234, 0.3);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+    
+    body.lap-tracker-page .lap-button small {
+        font-size: 0.45em;
+        display: block;
+        margin-top: 8px;
+        opacity: 0.9;
+        font-weight: normal;
+    }
+    
+    /* Lap statistics - tablet friendly */
+    body.lap-tracker-page #lap-stats {
+        font-size: 1.1em;
+    }
+    
+    body.lap-tracker-page .lap-stat-item {
+        padding: 15px;
+        margin: 10px 0;
+        font-size: 1.1em;
+    }
+    
+    /* Login screen - tablet optimized */
+    body.lap-tracker-page .login-screen {
+        padding: 40px 30px;
+    }
+    
+    body.lap-tracker-page .login-screen input {
+        font-size: 1.2em;
+        padding: 20px;
+        min-height: 55px;
+    }
+    
+    body.lap-tracker-page .login-screen button {
+        width: 100%;
+        padding: 20px;
+        font-size: 1.3em;
+        min-height: 55px;
+        touch-action: manipulation;
+    }
+}
+
+/* Fallback for high-resolution touch devices (like Samsung Fold) */
+@media (pointer: coarse) and (hover: none) and (min-width: 768px) {
+    /* Race Control - High-res mobile (Samsung Fold unfolded) */
+    body.race-control-page .mode-btn {
+        padding: 30px 25px;
+        font-size: 1.6em;
+        min-height: 80px;
+    }
+    
+    body.race-control-page .countdown-time {
+        font-size: 5.5em;
+    }
+    
+    body.race-control-page .countdown-label {
+        font-size: 1.8em;
+    }
+    
+    body.race-control-page .finish-btn {
+        padding: 30px 25px;
+        font-size: 1.7em;
+        min-height: 80px;
+    }
+    
+    body.race-control-page .flag-display .flag-content span {
+        font-size: 2.5em;
+    }
+    
+    /* Lap-line Tracker - High-res tablet */
+    body.lap-tracker-page .lap-button {
+        padding: 40px 25px;
+        font-size: 2.5em;
+        min-height: 160px;
+    }
+    
+    body.lap-tracker-page .lap-button small {
+        font-size: 0.4em;
+    }
+    
+    @media (orientation: portrait) {
+        body.lap-tracker-page .lap-buttons {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    
+    @media (orientation: landscape) {
+        body.lap-tracker-page .lap-buttons {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        }
+    }
+}
+
+/* Additional support for very high resolution tablets (2K+) */
+@media (pointer: coarse) and (hover: none) and (min-width: 1024px) {
+    /* Lap-line Tracker - Very high-res tablet */
+    body.lap-tracker-page .lap-button {
+        padding: 45px 30px;
+        font-size: 2.8em;
+        min-height: 180px;
+    }
+    
+    @media (orientation: portrait) {
+        body.lap-tracker-page .lap-buttons {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+    
+    @media (orientation: landscape) {
+        body.lap-tracker-page .lap-buttons {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
     }
 }
 

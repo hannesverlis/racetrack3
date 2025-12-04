@@ -1,5 +1,4 @@
 node_modules/
-.env
 .env.local
 *.log
 .DS_Store
@@ -20,3 +19,6 @@ race-countdown-worksheet.html
 
 # Duplicate files in root
 finish flag.png
+
+# Data persistence files
+data/

@@ -1,10 +1,32 @@
-const LAP_OBSERVER_KEY = '662e0f6c';
+let LAP_OBSERVER_KEY = null;
 let races = [];
 let currentRaceId = null;
 let lapStats = {};
 
+// Load access keys from server
+async function loadAccessKeys() {
+    try {
+        const response = await fetch('/api/public/config');
+        const config = await response.json();
+        LAP_OBSERVER_KEY = config.accessKeys.lapObserver;
+    } catch (error) {
+        console.error('Error loading access keys:', error);
+        // Fallback to default if server config fails
+        LAP_OBSERVER_KEY = '662e0f6c';
+    }
+}
+
 function checkAccessKey() {
     const key = document.getElementById('access-key').value.trim();
+    
+    // Wait for access key to be loaded
+    if (!LAP_OBSERVER_KEY) {
+        document.getElementById('login-error').textContent = 'Loading access keys...';
+        setTimeout(() => {
+            checkAccessKey();
+        }, 100);
+        return;
+    }
     
     if (key === LAP_OBSERVER_KEY) {
         accessKey = key;
@@ -19,15 +41,19 @@ function checkAccessKey() {
     }
 }
 
-async function loadRaces() {
-    try {
-        // Load both PLANNED and RUNNING races
-        races = await apiRequest('/api/public/available-races');
-        updateRaceSelect();
-    } catch (error) {
-        console.error('Error loading races:', error);
-        alert('Error loading races: ' + error.message);
-    }
+// Load access keys when page loads
+loadAccessKeys();
+
+function loadRaces() {
+    socket.emit('get-available-races', (response) => {
+        if (response.error) {
+            console.error('Error loading races:', response.error);
+            alert('Error loading races: ' + response.error);
+        } else {
+            races = response.races;
+            updateRaceSelect();
+        }
+    });
 }
 
 function updateRaceSelect() {
@@ -124,29 +150,26 @@ function displayLapButtons(drivers) {
     `).join('');
 }
 
-async function registerLap(carNumber) {
+function registerLap(carNumber) {
     if (!currentRaceId) {
         alert('Select a race first');
         return;
     }
     
-    try {
-        await apiRequest('/api/laps', {
-            method: 'POST',
-            body: JSON.stringify({ raceId: currentRaceId, carNumber })
-        });
-        
-        // Visual feedback for button - use data-attribute for exact match
-        const button = document.querySelector(`.lap-button[data-car-number="${carNumber}"]`);
-        if (button) {
-            button.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                button.style.transform = '';
-            }, 200);
+    socket.emit('register-lap', { accessKey, raceId: currentRaceId, carNumber }, (response) => {
+        if (response.error) {
+            alert('Error registering lap: ' + response.error);
+        } else {
+            // Visual feedback for button - use data-attribute for exact match
+            const button = document.querySelector(`.lap-button[data-car-number="${carNumber}"]`);
+            if (button) {
+                button.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    button.style.transform = '';
+                }, 200);
+            }
         }
-    } catch (error) {
-        alert('Error registering lap: ' + error.message);
-    }
+    });
 }
 
 let lapHistory = {}; // raceId -> { carNumber -> [laps] }

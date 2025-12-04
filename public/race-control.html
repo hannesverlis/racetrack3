@@ -6,7 +6,7 @@
     <title>Race Control - Beachside Racetrack</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
+<body class="race-control-page">
     <div class="container">
         <h1>Race Control</h1>
         
@@ -38,7 +38,8 @@
                 
                 <div id="flag-display" class="flag-display"></div>
                 
-                <button onclick="finishRace()" class="finish-btn">Finish race</button>
+                <button onclick="finishRace()" class="finish-btn" id="finish-btn">Finish race</button>
+                <button onclick="endRaceSession()" class="end-btn hidden" id="end-btn">END</button>
             </section>
         </div>
     </div>

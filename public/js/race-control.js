@@ -1,15 +1,38 @@
-const SAFETY_OFFICIAL_KEY = 'a2d393bc';
+let SAFETY_OFFICIAL_KEY = null;
 let currentRaceId = null;
 let countdownInterval = null;
 
+// Load access keys from server
+async function loadAccessKeys() {
+    try {
+        const response = await fetch('/api/public/config');
+        const config = await response.json();
+        SAFETY_OFFICIAL_KEY = config.accessKeys.safetyOfficial;
+    } catch (error) {
+        console.error('Error loading access keys:', error);
+        // Fallback to default if server config fails
+        SAFETY_OFFICIAL_KEY = 'a2d393bc';
+    }
+}
+
 function checkAccessKey() {
     const key = document.getElementById('access-key').value.trim();
+    
+    // Wait for access key to be loaded
+    if (!SAFETY_OFFICIAL_KEY) {
+        document.getElementById('login-error').textContent = 'Loading access keys...';
+        setTimeout(() => {
+            checkAccessKey();
+        }, 100);
+        return;
+    }
     
     if (key === SAFETY_OFFICIAL_KEY) {
         accessKey = key;
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('main-content').classList.remove('hidden');
-        loadNextRace();
+        // Check for running race first, then load next race
+        checkAndLoadCurrentRace();
     } else {
         document.getElementById('login-error').textContent = 'Invalid access code';
         setTimeout(() => {
@@ -18,13 +41,37 @@ function checkAccessKey() {
     }
 }
 
-async function loadNextRace() {
-    try {
-        const nextRace = await apiRequest('/api/public/next-race');
-        displayNextRace(nextRace);
-    } catch (error) {
-        console.error('Error loading next race:', error);
-    }
+// Load access keys when page loads
+loadAccessKeys();
+
+async function checkAndLoadCurrentRace() {
+    // First check if there's a running race via Socket.IO
+    socket.emit('get-running-races', (response) => {
+        if (response.success && response.races && response.races.length > 0) {
+            // There's a running race, show it
+            const runningRace = response.races[0];
+            currentRaceId = runningRace.id;
+            
+            // Show current race section
+            document.getElementById('next-race-section').classList.add('hidden');
+            document.getElementById('current-race-section').classList.remove('hidden');
+            
+            // Display the running race
+            displayCurrentRace(runningRace);
+            
+            // Subscribe to countdown
+            socket.emit('subscribe-countdown', runningRace.id);
+        } else {
+            // No running race, load next planned race
+            loadNextRace();
+        }
+    });
+}
+
+function loadNextRace() {
+    // Use Socket.IO to get next race
+    socket.emit('subscribe-next-race');
+    // The next-race event will be received via Socket.IO and handled by the listener
 }
 
 function displayNextRace(nextRace) {
@@ -59,89 +106,25 @@ function displayNextRace(nextRace) {
     currentRaceId = nextRace.id;
 }
 
-async function startRace() {
+function startRace() {
     if (!currentRaceId) {
         alert('No race to start');
         return;
     }
     
-    // Check first if the next race is still PLANNED
-    try {
-        const nextRace = await apiRequest('/api/public/next-race');
-        
-        // If the next race is not our selected race or is no longer PLANNED
-        if (!nextRace.id || nextRace.id !== currentRaceId) {
-            alert('Race has already been started or changed. Refreshing list...');
-            await loadNextRace();
-            return;
-        }
-        
-        // Check if there are drivers
-        if (!nextRace.drivers || nextRace.drivers.length === 0) {
-            alert('Race must have at least one driver!');
-            return;
-        }
-    } catch (error) {
-        console.error('Error checking next race:', error);
-        // Continue with starting the race anyway
-    }
-    
-    try {
-        await apiRequest(`/api/control/${currentRaceId}/start`, {
-            method: 'POST'
-        });
-        
-        // Refresh race from server to ensure status is correct
-        await loadRacesAndUpdate();
-        
-        // Socket.IO event will update the page automatically
-    } catch (error) {
-        alert('Error starting race: ' + error.message);
-        // Refresh next race if race couldn't be started
-        await loadNextRace();
-    }
-}
-
-async function loadRacesAndUpdate() {
-    try {
-        // Wait a bit for server to update the race
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Check if race is now running
-        const runningRaces = await apiRequest('/api/public/running-races');
-        const currentRace = runningRaces.find(r => r.id === currentRaceId);
-        
-        if (currentRace && currentRace.status === 'RUNNING') {
-            // Race is running, show it
-            if (document.getElementById('next-race-section') && !document.getElementById('next-race-section').classList.contains('hidden')) {
-                document.getElementById('next-race-section').classList.add('hidden');
-                document.getElementById('current-race-section').classList.remove('hidden');
-            }
-            displayCurrentRace(currentRace);
-            socket.emit('subscribe-countdown', currentRace.id);
+    socket.emit('start-race', { accessKey, raceId: currentRaceId }, (response) => {
+        if (response.error) {
+            alert('Error starting race: ' + response.error);
+            loadNextRace();
         } else {
-            // Race is not running, load next PLANNED race
-            await loadNextRace();
+            // Socket.IO events will update the page automatically
         }
-    } catch (error) {
-        console.error('Error loading races:', error);
-        // Race might be running, but we couldn't check it
-        // Socket.IO event should update the page
-    }
+    });
 }
 
-async function loadCurrentRace() {
-    try {
-        // Use public endpoint for running races
-        const runningRaces = await apiRequest('/api/public/running-races');
-        const race = runningRaces.find(r => r.id === currentRaceId);
-        
-        if (race) {
-            displayCurrentRace(race);
-        }
-    } catch (error) {
-        console.error('Error loading current race:', error);
-    }
+function loadCurrentRace() {
+    // Race will be updated via Socket.IO events
+    // This function is kept for compatibility but doesn't need to do anything
 }
 
 function displayCurrentRace(race) {
@@ -154,6 +137,27 @@ function displayCurrentRace(race) {
     
     // Update flag display
     updateFlagDisplay(race.mode);
+    
+    // Show/hide controls based on mode
+    updateRaceControls(race.mode);
+}
+
+function updateRaceControls(mode) {
+    const modeControls = document.querySelector('.mode-controls');
+    const finishBtn = document.getElementById('finish-btn');
+    const endBtn = document.getElementById('end-btn');
+    
+    if (mode === 'FINISHING') {
+        // Hide mode controls and finish button, show end button
+        if (modeControls) modeControls.classList.add('hidden');
+        if (finishBtn) finishBtn.classList.add('hidden');
+        if (endBtn) endBtn.classList.remove('hidden');
+    } else {
+        // Show mode controls and finish button, hide end button
+        if (modeControls) modeControls.classList.remove('hidden');
+        if (finishBtn) finishBtn.classList.remove('hidden');
+        if (endBtn) endBtn.classList.add('hidden');
+    }
 }
 
 function updateFlagDisplay(mode) {
@@ -187,20 +191,18 @@ function updateFlagDisplay(mode) {
     }
 }
 
-async function setMode(mode) {
+function setMode(mode) {
     if (!currentRaceId) return;
     
-    try {
-        await apiRequest(`/api/control/${currentRaceId}/mode`, {
-            method: 'POST',
-            body: JSON.stringify({ mode })
-        });
-    } catch (error) {
-        alert('Error changing mode: ' + error.message);
-    }
+    socket.emit('set-mode', { accessKey, raceId: currentRaceId, mode }, (response) => {
+        if (response.error) {
+            alert('Error changing mode: ' + response.error);
+        }
+        // Socket.IO events will update the page automatically
+    });
 }
 
-async function finishRace() {
+function finishRace() {
     if (!currentRaceId) {
         alert('No active race');
         return;
@@ -210,18 +212,35 @@ async function finishRace() {
         return;
     }
     
-    try {
-        await apiRequest(`/api/control/${currentRaceId}/finish`, {
-            method: 'POST'
-        });
-        
-        document.getElementById('current-race-section').classList.add('hidden');
-        document.getElementById('next-race-section').classList.remove('hidden');
-        currentRaceId = null;
-        loadNextRace();
-    } catch (error) {
-        alert('Error finishing race: ' + error.message);
+    socket.emit('finish-race', { accessKey, raceId: currentRaceId }, (response) => {
+        if (response.error) {
+            alert('Error finishing race: ' + response.error);
+        }
+        // Socket.IO events will update the page automatically
+    });
+}
+
+function endRaceSession() {
+    if (!currentRaceId) {
+        alert('No active race');
+        return;
     }
+    
+    if (!confirm('Are you sure you want to end the race session?')) {
+        return;
+    }
+    
+    socket.emit('end-race-session', { accessKey, raceId: currentRaceId }, (response) => {
+        if (response.error) {
+            alert('Error ending race session: ' + response.error);
+        } else {
+            // Hide current race section and show next race
+            document.getElementById('current-race-section').classList.add('hidden');
+            document.getElementById('next-race-section').classList.remove('hidden');
+            currentRaceId = null;
+            loadNextRace();
+        }
+    });
 }
 
 function updateCountdown(remainingSeconds) {
@@ -251,26 +270,29 @@ socket.on('race-update', (race) => {
         }
     }
     
-    // If race changed from PLANNED to something else, but it was our selected race
-    if (race.status !== 'PLANNED' && race.id === currentRaceId && race.status !== 'RUNNING') {
-        // Race changed (e.g. FINISHED), load next
-        currentRaceId = null;
-        loadNextRace();
-    }
-    
-    // If race finished, show next
-    if (race.status === 'FINISHED' && race.id === currentRaceId) {
+    // If race finished and mode is DANGER (session ended), show next
+    if (race.status === 'FINISHED' && race.mode === 'DANGER' && race.id === currentRaceId) {
         if (document.getElementById('current-race-section')) {
             document.getElementById('current-race-section').classList.add('hidden');
             document.getElementById('next-race-section').classList.remove('hidden');
         }
         currentRaceId = null;
         loadNextRace();
+        return; // Don't process further
     }
     
-    // Update current race if it's active
-    if (race.id === currentRaceId && race.status === 'RUNNING') {
+    // Update current race if it's active (RUNNING or FINISHED with FINISHING mode)
+    if (race.id === currentRaceId && (race.status === 'RUNNING' || (race.status === 'FINISHED' && race.mode === 'FINISHING'))) {
         displayCurrentRace(race);
+        return; // Don't process further
+    }
+    
+    // If race changed from PLANNED to something else, but it was our selected race
+    // Only hide if race is not RUNNING and not FINISHED with FINISHING mode
+    if (race.status !== 'PLANNED' && race.id === currentRaceId && race.status !== 'RUNNING' && !(race.status === 'FINISHED' && race.mode === 'FINISHING')) {
+        // Race changed (e.g. FINISHED with DANGER mode), load next
+        currentRaceId = null;
+        loadNextRace();
     }
     
     // If race changed from PLANNED to something else, but it's not our selected race
@@ -284,15 +306,8 @@ socket.on('countdown', (data) => {
     if (data.raceId === currentRaceId) {
         updateCountdown(data.remainingSeconds);
         
-        if (!data.isRunning && currentRaceId) {
-            // Race finished
-            setTimeout(() => {
-                document.getElementById('current-race-section').classList.add('hidden');
-                document.getElementById('next-race-section').classList.remove('hidden');
-                currentRaceId = null;
-                loadNextRace();
-            }, 2000);
-        }
+        // Don't auto-hide race section when timer stops - wait for END button
+        // The race will be in FINISHING mode, and END button will be visible
     }
 });
 
@@ -300,6 +315,20 @@ socket.on('flags', (data) => {
     if (data.raceId === currentRaceId) {
         // Mode changed, update flag display
         updateFlagDisplay(data.mode);
+        // Update race controls visibility
+        updateRaceControls(data.mode);
+        
+        // If mode changed to FINISHING, make sure race section is visible
+        if (data.mode === 'FINISHING') {
+            const currentRaceSection = document.getElementById('current-race-section');
+            const nextRaceSection = document.getElementById('next-race-section');
+            if (currentRaceSection && currentRaceSection.classList.contains('hidden')) {
+                currentRaceSection.classList.remove('hidden');
+            }
+            if (nextRaceSection && !nextRaceSection.classList.contains('hidden')) {
+                nextRaceSection.classList.add('hidden');
+            }
+        }
     }
 });
 
@@ -307,15 +336,15 @@ socket.on('next-race', (nextRace) => {
     // Update next race info if we're showing the next race section
     // or if there's no current race running
     const nextRaceSection = document.getElementById('next-race-section');
+    const currentRaceSection = document.getElementById('current-race-section');
     const isShowingNextRace = nextRaceSection && !nextRaceSection.classList.contains('hidden');
+    const isShowingCurrentRace = currentRaceSection && !currentRaceSection.classList.contains('hidden');
     
-    if (isShowingNextRace || !currentRaceId) {
-        // Only update if this is the next race (not a running race)
-        if (!currentRaceId || (nextRace.id && nextRace.id === currentRaceId)) {
-            displayNextRace(nextRace);
-            if (nextRace.id) {
-                currentRaceId = nextRace.id;
-            }
+    // Only update if we're showing next race section (not current race)
+    if (isShowingNextRace && !isShowingCurrentRace) {
+        displayNextRace(nextRace);
+        if (nextRace.id) {
+            currentRaceId = nextRace.id;
         }
     }
 });
