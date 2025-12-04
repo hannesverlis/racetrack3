@@ -3,6 +3,7 @@ node_modules/
 .env.local
 *.log
 .DS_Store
+.idea/
 
 # Socket.IO files
 socket.io*
@@ -10,4 +11,12 @@ socket.io*
 # Documentation files
 ÕPPE_PLAAN.md
 INTELLIJ_KÄIVITAMINE.md
+SOCKET_IO_SELGITUS.md
+SOCKET_IO_VISUAALNE_DIAGRAMM.md
+SOCKET_IO_LIHTNE_DIAGRAMM.md
+SOCKET_IO_DIAGRAMM.md
+race-countdown-worksheet.js
+race-countdown-worksheet.html
 
+# Duplicate files in root
+finish flag.png

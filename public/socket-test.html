@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="et">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -68,16 +68,16 @@
         <h1>🔌 Socket.IO Test</h1>
         
         <div id="connection-status" class="status disconnected">
-            Ühendus: Katkestatud
+            Connection: Disconnected
         </div>
         
         <div>
-            <button onclick="testConnection()">Testi ühendust</button>
-            <button onclick="clearLog()">Tühjenda logi</button>
-            <button onclick="testSubscribe()">Telli sündmused</button>
+            <button onclick="testConnection()">Test Connection</button>
+            <button onclick="clearLog()">Clear Log</button>
+            <button onclick="testSubscribe()">Subscribe to Events</button>
         </div>
         
-        <h2>Sündmuste logi</h2>
+        <h2>Event Log</h2>
         <div id="event-log" class="event-log"></div>
     </div>
     
@@ -100,10 +100,10 @@
             const status = document.getElementById('connection-status');
             if (connected) {
                 status.className = 'status connected';
-                status.textContent = 'Ühendus: Ühendatud';
+                status.textContent = 'Connection: Connected';
             } else {
                 status.className = 'status disconnected';
-                status.textContent = 'Ühendus: Katkestatud';
+                status.textContent = 'Connection: Disconnected';
             }
         }
         
@@ -115,21 +115,21 @@
             socket = io();
             
             socket.on('connect', () => {
-                addLog('✅ Socket.IO ühendus loodud', 'success');
+                addLog('✅ Socket.IO connection established', 'success');
                 updateStatus(true);
             });
             
             socket.on('disconnect', () => {
-                addLog('❌ Socket.IO ühendus katkestatud', 'error');
+                addLog('❌ Socket.IO connection disconnected', 'error');
                 updateStatus(false);
             });
             
             socket.on('connect_error', (error) => {
-                addLog(`❌ Ühenduse viga: ${error.message}`, 'error');
+                addLog(`❌ Connection error: ${error.message}`, 'error');
                 updateStatus(false);
             });
             
-            // Testi kõik võidusõidu sündmused
+            // Test all race events
             socket.on('race-update', (data) => {
                 addLog(`📊 race-update: ${JSON.stringify(data)}`, 'success');
             });
@@ -156,33 +156,33 @@
         }
         
         function testConnection() {
-            addLog('🔄 Testin ühendust...', 'info');
+            addLog('🔄 Testing connection...', 'info');
             initSocket();
         }
         
         function testSubscribe() {
             if (!socket || !socket.connected) {
-                addLog('❌ Socket.IO pole ühendatud!', 'error');
+                addLog('❌ Socket.IO is not connected!', 'error');
                 return;
             }
             
-            addLog('📡 Tellin kõik sündmused...', 'info');
+            addLog('📡 Subscribing to all events...', 'info');
             
-            // Telli countdown
+            // Subscribe to countdown
             socket.emit('subscribe-countdown', 1);
-            addLog('📡 Telli countdown raceId=1', 'info');
+            addLog('📡 Subscribe countdown raceId=1', 'info');
             
-            // Telli leaderboard
+            // Subscribe to leaderboard
             socket.emit('subscribe-leaderboard', 1);
-            addLog('📡 Telli leaderboard raceId=1', 'info');
+            addLog('📡 Subscribe leaderboard raceId=1', 'info');
             
-            // Telli flags
+            // Subscribe to flags
             socket.emit('subscribe-flags', 1);
-            addLog('📡 Telli flags raceId=1', 'info');
+            addLog('📡 Subscribe flags raceId=1', 'info');
             
-            // Telli next-race
+            // Subscribe to next-race
             socket.emit('subscribe-next-race');
-            addLog('📡 Telli next-race', 'info');
+            addLog('📡 Subscribe next-race', 'info');
         }
         
         function clearLog() {
@@ -190,12 +190,11 @@
             eventCount = 0;
         }
         
-        // Algseadistus
+        // Initialization
         window.addEventListener('load', () => {
-            addLog('🚀 Socket.IO test leht laetud', 'info');
+            addLog('🚀 Socket.IO test page loaded', 'info');
             initSocket();
         });
     </script>
 </body>
 </html>
-

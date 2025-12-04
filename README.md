@@ -1,69 +1,69 @@
 # 🏁 Beachside Racetrack MVP
 
-Reaalajas võidusõidu juhtimissüsteem Beachside Racetrack jaoks. Node.js server Express + Socket.IO-ga.
+Real-time race management system for Beachside Racetrack. Node.js server with Express + Socket.IO.
 
-## 🚀 Funktsionaalsus
+## 🚀 Features
 
-### Võidusõitude haldamine
-- Võidusõitude lisamine ja kustutamine
-- Sõitjate registreerimine ja auto numbrite määramine
-- Unikaalsete sõitjanimede kontroll
+### Race Management
+- Add and delete races
+- Register drivers and assign car numbers
+- Unique driver name validation
 
-### Võidusõidu juhtimine
-- Võidusõidu alustamine ja lõpetamine
-- Võidusõidu režiimide juhtimine (Turvaline, Oht, Ohulik, Lõpeta)
-- 10-minutiline ajastaja (1 minut arendusrežiimis)
+### Race Control
+- Start and finish races
+- Race mode control (Safe, Caution, Danger, Finish)
+- 10-minute timer (1 minute in development mode)
 
-### Ringide registreerimine
-- Reaalajas ringide registreerimine
-- Kiireimate ringide jälgimine
-- Ringide statistika
+### Lap Registration
+- Real-time lap registration
+- Fastest lap tracking
+- Lap statistics
 
-### Publikudispleid
-- Reaalajas tulemuste kuvamine
-- Võidusõidu lippude kuvamine
-- Järgmise võidusõidu info
+### Public Displays
+- Real-time race results display
+- Race flag display
+- Next race information
 
-## 🛠️ Tehnoloogiad
+## 🛠️ Technologies
 
 - **Backend:** Node.js, Express, Socket.IO
 - **Frontend:** HTML5, CSS3, JavaScript (ES6+)
-- **Reaalajas kommunikatsioon:** Socket.IO
-- **Stiilid:** CSS Grid, Flexbox, Gradientid
+- **Real-time Communication:** Socket.IO
+- **Styling:** CSS Grid, Flexbox, Gradients
 
-## 📋 Kasutajaliidesed
+## 📋 User Interfaces
 
-| Kasutajaliides | Kasutaja | Marsruut | Kirjeldus |
-|----------------|----------|----------|-----------|
-| Front Desk | Receptionist | `/front-desk.html` | Võidusõitude ja sõitjate haldamine |
-| Race Control | Safety Official | `/race-control.html` | Võidusõidu juhtimine ja turvalisus |
-| Lap-line Tracker | Lap-line Observer | `/lap-line-tracker.html` | Ringide registreerimine |
-| Leader Board | Publik | `/leader-board.html` | Võidusõidu tulemused |
-| Next Race | Sõitjad | `/next-race.html` | Järgmise võidusõidu info |
-| Race Countdown | Publik | `/race-countdown.html` | Võidusõidu ajastaja |
-| Race Flags | Publik | `/race-flags.html` | Võidusõidu lippude kuvamine |
+| Interface | User | Route | Description |
+|-----------|------|-------|-------------|
+| Front Desk | Receptionist | `/front-desk.html` | Race and driver management |
+| Race Control | Safety Official | `/race-control.html` | Race control and safety |
+| Lap-line Tracker | Lap-line Observer | `/lap-line-tracker.html` | Lap registration |
+| Leader Board | Public | `/leader-board.html` | Race results |
+| Next Race | Drivers | `/next-race.html` | Next race information |
+| Race Countdown | Public | `/race-countdown.html` | Race countdown timer |
+| Race Flags | Public | `/race-flags.html` | Race flag display |
 
-## 🔐 Turvalisus
+## 🔐 Security
 
-Kõik töötajaliidesed nõuavad ligipääsukoodi:
+All staff interfaces require an access key:
 
 - **Front Desk:** `8ded6076`
 - **Race Control:** `a2d393bc`
 - **Lap-line Tracker:** `662e0f6c`
 
-## 🚀 Paigaldamine ja käivitamine
+## 🚀 Installation and Running
 
-### Eeltingimused
-- Node.js (versioon 14 või uuem)
+### Prerequisites
+- Node.js (version 14 or higher)
 - npm
 
-### 1. Sõltuvuste paigaldamine
+### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Keskkonnamuutujate seadistamine
-Loo `.env` fail projekti juurkaustas:
+### 2. Environment Variables Setup
+Create a `.env` file in the project root:
 ```
 RECEPTIONIST_KEY=8ded6076
 SAFETY_OFFICIAL_KEY=a2d393bc
@@ -72,132 +72,131 @@ PORT=3000
 DEV_MODE=false
 ```
 
-### 3. Serveri käivitamine
+### 3. Start Server
 ```bash
-# Tavarežiim (10 minutit)
+# Normal mode (10 minutes)
 npm start
 
-# Arendusrežiim (1 minut)
+# Development mode (1 minute)
 npm run dev
 ```
 
-### 4. Kasutajaliideste ligipääs
-Server on kättesaadav aadressil `http://localhost:3000`
+### 4. Access User Interfaces
+Server is accessible at `http://localhost:3000`
 
-## 📖 Kasutajajuhend
+## 📖 User Guide
 
 ### Front Desk (Receptionist)
 
-1. **Ligipääs:** Sisesta ligipääsukood `8ded6076`
-2. **Võidusõidu lisamine:**
-   - Sisesta võidusõidu nimi
-   - Vajuta "Lisa võidusõit"
-3. **Sõitja lisamine:**
-   - Vali võidusõit rippmenüüst
-   - Sisesta sõitja nimi ja auto number
-   - Vajuta "Lisa sõitja"
-4. **Sõitja kustutamine:** Vajuta 🗑️ nuppu sõitja kõrval
+1. **Access:** Enter access key `8ded6076`
+2. **Add Race:**
+   - Enter race name
+   - Click "Add Race"
+3. **Add Driver:**
+   - Select race from dropdown
+   - Enter driver name and car number
+   - Click "Add Driver"
+4. **Delete Driver:** Click 🗑️ button next to driver
 
 ### Race Control (Safety Official)
 
-1. **Ligipääs:** Sisesta ligipääsukood `a2d393bc`
-2. **Võidusõidu alustamine:**
-   - Vaata järgmise võidusõidu infot
-   - Vajuta "Alusta võidusõitu"
-3. **Võidusõidu juhtimine:**
-   - 🟢 **Turvaline:** Tavaline võidusõit
-   - 🟡 **Oht:** Aeglane sõit
-   - 🔴 **Ohulik:** Võidusõit peatatud
-   - 🏁 **Lõpeta:** Võidusõidu lõpetamine
-4. **Võidusõidu lõpetamine:** Vajuta "Lõpeta võidusõit"
+1. **Access:** Enter access key `a2d393bc`
+2. **Start Race:**
+   - View next race information
+   - Click "Start Race"
+3. **Race Control:**
+   - 🟢 **Safe:** Normal race
+   - 🟡 **Caution:** Slow race
+   - 🔴 **Danger:** Race stopped
+   - 🏁 **Finish:** Finish race
+4. **Finish Race:** Click "Finish Race"
 
 ### Lap-line Tracker (Lap-line Observer)
 
-1. **Ligipääs:** Sisesta ligipääsukood `662e0f6c`
-2. **Ringide registreerimine:**
-   - Vali võidusõit rippmenüüst
-   - Vajuta auto numbri nuppu, kui auto läbib ringi
-   - Nupud on suured ja kergeks kasutamiseks
-   - Ringide statistika värskeneb automaatselt
+1. **Access:** Enter access key `662e0f6c`
+2. **Register Laps:**
+   - Select race from dropdown
+   - Click car number button when car passes finish line
+   - Buttons are large and easy to use
+   - Lap statistics update automatically
 
-### Publikudispleid
+### Public Displays
 
-- **Leader Board:** Reaalajas võidusõidu tulemused ja kohtade järjestus
-- **Next Race:** Järgmise võidusõidu info ja sõitjate nimekiri
-- **Race Countdown:** Suur võidusõidu ajastaja
-- **Race Flags:** Võidusõidu lippude kuvamine (täisekraan)
+- **Leader Board:** Real-time race results and rankings
+- **Next Race:** Next race information and driver list
+- **Race Countdown:** Large race countdown timer
+- **Race Flags:** Race flag display (fullscreen)
 
-## 🔧 Arendusrežiim
+## 🔧 Development Mode
 
-Arendusrežiimis kestab võidusõit 1 minuti asemel 10 minutit:
+In development mode, races last 1 minute instead of 10 minutes:
 
 ```bash
 npm run dev
 ```
 
-## 🌐 Võrgu ligipääs
+## 🌐 Network Access
 
-Server kuulab kõikidel võrguliidestel (`0.0.0.0`), seega on kasutajaliidesed kättesaadavad teistest seadmetest samas võrgus.
+Server listens on all network interfaces (`0.0.0.0`), so user interfaces are accessible from other devices on the same network.
 
-### Näide võrgu ligipääsust:
-- Arvuti IP: `192.168.1.100`
-- Kasutajaliidesed: `http://192.168.1.100:3000/front-desk.html`
+### Example Network Access:
+- Computer IP: `192.168.1.100`
+- User Interfaces: `http://192.168.1.100:3000/front-desk.html`
 
-## 📱 Mobiili optimeerimine
+## 📱 Mobile Optimization
 
-Kõik kasutajaliidesed on optimeeritud mobiiliseadmetele:
-- Responsive disain
-- Suured puutetundlikud nupud
-- Optimeeritud fontide suurused
+All user interfaces are optimized for mobile devices:
+- Responsive design
+- Large touch-friendly buttons
+- Optimized font sizes
 
-## 🎨 Kasutajaliidese funktsioonid
+## 🎨 User Interface Features
 
-### Täisekraani režiim
-Publikudispleidel on võimalik minna täisekraani režiimi nupu ⛶ abil.
+### Fullscreen Mode
+Public displays can enter fullscreen mode using the ⛶ button.
 
-### Reaalajas värskendamine
-Kõik andmed värskenevad automaatselt Socket.IO abil:
-- Võidusõidu tulemused
-- Ajastaja
-- Võidusõidu režiimid
-- Ringide statistika
+### Real-time Updates
+All data updates automatically via Socket.IO:
+- Race results
+- Timer
+- Race modes
+- Lap statistics
 
-### Veateated
-Süsteem kuvab selgeid veateateid:
-- Vale ligipääsukood
-- Puuduvad andmed
-- Võidusõidu vead
+### Error Messages
+System displays clear error messages:
+- Invalid access key
+- Missing data
+- Race errors
 
-## 🔄 Võidusõidu tsükkel
+## 🔄 Race Cycle
 
-1. **Planeerimine:** Receptionist lisab võidusõidu ja sõitjad
-2. **Alustamine:** Safety Official alustab võidusõitu
-3. **Jälgimine:** Lap-line Observer registreerib ringid
-4. **Lõpetamine:** Safety Official lõpetab võidusõidu
-5. **Järgmine:** Süsteem valmistub järgmisele võidusõidule
+1. **Planning:** Receptionist adds race and drivers
+2. **Starting:** Safety Official starts race
+3. **Monitoring:** Lap-line Observer registers laps
+4. **Finishing:** Safety Official finishes race
+5. **Next:** System prepares for next race
 
-## 🐛 Probleemide lahendamine
+## 🐛 Troubleshooting
 
-### Server ei käivitu
-- Kontrolli, kas kõik keskkonnamuutujad on seadistatud
-- Veendu, et Node.js on paigaldatud
-- Kontrolli, kas port 3000 on vaba
+### Server Won't Start
+- Check that all environment variables are set
+- Ensure Node.js is installed
+- Check if port 3000 is available
 
-### Kasutajaliidesed ei tööta
-- Kontrolli, kas server töötab
-- Veendu, et Socket.IO on paigaldatud
-- Kontrolli brauseri konsooli veateadete jaoks
+### User Interfaces Not Working
+- Check if server is running
+- Ensure Socket.IO is installed
+- Check browser console for errors
 
-### Reaalajas kommunikatsioon ei tööta
-- Kontrolli võrguühendust
-- Veendu, et tulemüür ei blokeeri porti 3000
-- Kontrolli Socket.IO ühendust brauseri konsoolis
+### Real-time Communication Not Working
+- Check network connection
+- Ensure firewall doesn't block port 3000
+- Check Socket.IO connection in browser console
 
-## 📞 Tugi
+## 📞 Support
 
-Kui tekib probleeme, kontrolli:
-1. Serveri konsooli veateadete jaoks
-2. Brauseri konsooli (F12)
-3. Võrguühendust
-4. Keskkonnamuutujate seadistamist
-
+If you encounter problems, check:
+1. Server console for error messages
+2. Browser console (F12)
+3. Network connection
+4. Environment variable setup
