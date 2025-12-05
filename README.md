@@ -110,6 +110,9 @@ Server is accessible at `http://localhost:3000`
    - 🔴 **Danger:** Race stopped
    - 🏁 **Finish:** Race finished
 4. **Finish Race:** Click "END"
+5. **End Race Session:** Click "End Race Session" button
+   - This ends the race session and displays "Proceed to the paddock" message on Next Race display
+   - After 5 seconds, the Next Race display automatically updates to show the next planned race
 
 ### Lap-line Tracker (Lap-line Observer)
 
@@ -124,6 +127,8 @@ Server is accessible at `http://localhost:3000`
 
 - **Leader Board:** Real-time race results and rankings
 - **Next Race:** Next race information and driver list
+  - Shows "Proceed to the paddock" message temporarily after race session ends
+  - Automatically updates to show next race after 5 seconds
 - **Race Countdown:** Large race countdown timer
 - **Race Flags:** Race flag display (fullscreen)
 
@@ -174,7 +179,10 @@ System displays clear error messages:
 2. **Starting:** Safety Official starts race
 3. **Monitoring:** Lap-line Observer registers laps
 4. **Finishing:** Safety Official finishes race
-5. **Next:** System prepares for next race
+5. **Session End:** Safety Official ends race session
+   - "Proceed to the paddock" message appears on Next Race display
+   - Message displays for 5 seconds
+6. **Next:** System automatically updates to show next planned race
 
 ## 🐛 Troubleshooting
 
